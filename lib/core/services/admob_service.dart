@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:nightingale_heart/core/config/app_constants.dart';
+import 'package:nightingale_heart/core/services/web_rewarded_ad_service.dart';
 
 /// Provides the singleton [AdMobService] instance.
 final adMobServiceProvider = Provider<AdMobService>((ref) {
@@ -31,7 +32,9 @@ class AdMobService {
   bool get isInitialized => _initialized;
 
   /// Whether a rewarded ad is loaded and ready to show.
-  bool get isRewardedAdReady => _rewardedAd != null;
+  bool get isRewardedAdReady => kIsWeb
+      ? WebRewardedAdService.instance.isRewardedAdReady
+      : _rewardedAd != null;
 
   // ─── Initialization ──────────────────────────────────────────────────
 
@@ -41,7 +44,9 @@ class AdMobService {
   Future<void> initAdMob() async {
     if (_initialized) return;
     if (kIsWeb) {
-      debugPrint('[AdMobService] Skipped on web; use AdSense web ads.');
+      await WebRewardedAdService.instance.initialize();
+      _initialized = true;
+      debugPrint('[AdMobService] Web ads initialized.');
       return;
     }
     try {
@@ -65,7 +70,10 @@ class AdMobService {
   ///
   /// Does nothing if an ad is already loaded or currently loading.
   void loadRewardedAd() {
-    if (kIsWeb) return;
+    if (kIsWeb) {
+      WebRewardedAdService.instance.loadRewardedAd();
+      return;
+    }
     if (!_initialized) return;
     if (_rewardedAd != null || _isAdLoading) return;
 
@@ -100,7 +108,8 @@ class AdMobService {
           _rewardedAd = null;
           _isAdLoading = false;
           debugPrint(
-              '[AdMobService] Rewarded ad failed to load: ${error.message}');
+            '[AdMobService] Rewarded ad failed to load: ${error.message}',
+          );
           // Retry after 30 seconds (like nurse singles app)
           Future.delayed(const Duration(seconds: 30), loadRewardedAd);
         },
@@ -124,8 +133,9 @@ class AdMobService {
     required void Function(String rewardType, int amount) onReward,
   }) async {
     if (kIsWeb) {
-      debugPrint('[AdMobService] Rewarded ads are unavailable on web.');
-      return false;
+      return WebRewardedAdService.instance.showRewardedAdWithCallback(
+        onReward: onReward,
+      );
     }
     if (_rewardedAd == null) {
       debugPrint('[AdMobService] No rewarded ad available');
@@ -179,8 +189,7 @@ class AdMobService {
   /// Waits for the ad to be fully dismissed before returning.
   Future<int?> showRewardedAd() async {
     if (kIsWeb) {
-      debugPrint('[AdMobService] Rewarded ads are unavailable on web.');
-      return null;
+      return WebRewardedAdService.instance.showRewardedAd();
     }
     if (_rewardedAd == null) {
       debugPrint('[AdMobService] No rewarded ad available');
@@ -213,7 +222,8 @@ class AdMobService {
         onUserEarnedReward: (ad, reward) {
           rewardAmount = reward.amount.toInt();
           debugPrint(
-              '[AdMobService] User earned reward: ${reward.amount} ${reward.type}');
+            '[AdMobService] User earned reward: ${reward.amount} ${reward.type}',
+          );
         },
       );
       // Wait for the ad to be fully dismissed.

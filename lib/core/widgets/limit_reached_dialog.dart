@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:nightingale_heart/core/config/app_theme.dart';
 import 'package:nightingale_heart/core/router/app_router.dart';
 import 'package:nightingale_heart/core/services/admob_service.dart';
 import 'package:nightingale_heart/core/services/usage_limits_service.dart';
+import 'package:nightingale_heart/core/services/web_rewarded_ad_service.dart';
 
 /// Shows a dialog when a user hits a refilled daily usage limit.
 /// Offers rewarded ads to refill.
@@ -110,7 +112,9 @@ class _LimitReachedDialogState extends State<_LimitReachedDialog> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'Ad not ready yet. Please try again in a moment.',
+                kIsWeb
+                    ? WebRewardedAdService.instance.unavailableReason
+                    : 'Ad not ready yet. Please try again in a moment.',
                 style: GoogleFonts.plusJakartaSans(),
               ),
               behavior: SnackBarBehavior.floating,

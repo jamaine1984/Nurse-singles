@@ -39,6 +39,11 @@ $revenueCatWebKey = First-Value $values @('REVENUECAT_WEB_PUBLIC_API_KEY')
 $zegoAppId = First-Value $values @('ZEGO_APP_ID', 'ZEGOCLOUD_APP_ID')
 $zegoAppSign = First-Value $values @('ZEGO_APP_SIGN', 'ZEGOCLOUD_APP_SIGN')
 $environment = First-Value $values @('ENVIRONMENT')
+$adsensePublisherId = First-Value $values @('ADSENSE_PUBLISHER_ID')
+$gamRewardedAdUnitPath = First-Value $values @(
+  'GAM_REWARDED_AD_UNIT_PATH',
+  'GOOGLE_AD_MANAGER_REWARDED_AD_UNIT_PATH'
+)
 $appCheckWebRecaptchaSiteKey = First-Value $values @(
   'APP_CHECK_WEB_RECAPTCHA_ENTERPRISE_SITE_KEY',
   'APP_CHECK_WEB_RECAPTCHA_SITE_KEY'
@@ -50,6 +55,10 @@ if ($revenueCatWebKey) { $defines['REVENUECAT_WEB_PUBLIC_API_KEY'] = $revenueCat
 if ($zegoAppId) { $defines['ZEGO_APP_ID'] = $zegoAppId }
 if ($zegoAppSign) { $defines['ZEGO_APP_SIGN'] = $zegoAppSign }
 if ($environment) { $defines['ENVIRONMENT'] = $environment }
+if ($adsensePublisherId) { $defines['ADSENSE_PUBLISHER_ID'] = $adsensePublisherId }
+if ($gamRewardedAdUnitPath) {
+  $defines['GAM_REWARDED_AD_UNIT_PATH'] = $gamRewardedAdUnitPath
+}
 if ($appCheckWebRecaptchaSiteKey) {
   $defines['APP_CHECK_WEB_RECAPTCHA_SITE_KEY'] = $appCheckWebRecaptchaSiteKey
 }
@@ -70,6 +79,13 @@ if ($revenueCatWebKey) {
   }
 } elseif ($revenueCatKey -and $revenueCatKey.ToLowerInvariant().StartsWith('goog_')) {
   Write-Warning 'REVENUECAT_WEB_PUBLIC_API_KEY is missing. The web build will initialize with the Google Play key and Web Billing products may not load.'
+}
+
+if ($adsensePublisherId -and $adsensePublisherId -notmatch '^ca-pub-\d+$') {
+  Write-Warning 'ADSENSE_PUBLISHER_ID should look like ca-pub-1234567890123456.'
+}
+if (!$gamRewardedAdUnitPath) {
+  Write-Warning 'GAM_REWARDED_AD_UNIT_PATH is missing. Web reward buttons will not grant ad rewards until Google Ad Manager rewarded inventory is configured.'
 }
 
 $flutterArgs = @('build', 'web', '--release')
@@ -124,5 +140,9 @@ if (Test-Path $indexPath) {
   }
   $indexHtml = Get-Content -LiteralPath $indexPath -Raw
   $indexHtml = $indexHtml -replace 'flutter_bootstrap(\.\d{14})?\.js(\?v=[^"]*)?', $bootstrapFileName
+  $adsensePublisherIdForHtml = if ($adsensePublisherId) { $adsensePublisherId } else { '' }
+  $gamRewardedAdUnitPathForHtml = if ($gamRewardedAdUnitPath) { $gamRewardedAdUnitPath } else { '' }
+  $indexHtml = $indexHtml.Replace('__ADSENSE_PUBLISHER_ID__', $adsensePublisherIdForHtml)
+  $indexHtml = $indexHtml.Replace('__GAM_REWARDED_AD_UNIT_PATH__', $gamRewardedAdUnitPathForHtml)
   Set-Content -LiteralPath $indexPath -Value $indexHtml -NoNewline
 }

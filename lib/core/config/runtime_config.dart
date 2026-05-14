@@ -70,6 +70,22 @@ class RuntimeConfig {
     envKeys: const ['APP_CHECK_WEB_PROVIDER'],
   );
 
+  static String get adsensePublisherId => _value(
+    dartDefine: const String.fromEnvironment('ADSENSE_PUBLISHER_ID'),
+    envKeys: const ['ADSENSE_PUBLISHER_ID'],
+  );
+
+  static String get googleAdManagerRewardedAdUnitPath => _value(
+    dartDefine: const String.fromEnvironment('GAM_REWARDED_AD_UNIT_PATH'),
+    legacyDartDefine: const String.fromEnvironment(
+      'GOOGLE_AD_MANAGER_REWARDED_AD_UNIT_PATH',
+    ),
+    envKeys: const [
+      'GAM_REWARDED_AD_UNIT_PATH',
+      'GOOGLE_AD_MANAGER_REWARDED_AD_UNIT_PATH',
+    ],
+  );
+
   static String _value({
     required String dartDefine,
     String legacyDartDefine = '',

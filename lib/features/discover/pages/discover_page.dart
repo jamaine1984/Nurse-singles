@@ -831,68 +831,94 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage>
   ) {
     return Column(
       children: [
-        // Card stack
         Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: CardSwiper(
-              key: ValueKey(_profileStackKey),
-              controller: _swiperController,
-              cardsCount: profiles.length,
-              numberOfCardsDisplayed: min(3, profiles.length),
-              duration: const Duration(milliseconds: 140),
-              threshold: 38,
-              maxAngle: 18,
-              backCardOffset: const Offset(0, -22),
-              scale: 0.94,
-              padding: EdgeInsets.zero,
-              isLoop: true,
-              showBackCardOnUndo: true,
-              undoSwipeThreshold: 32,
-              allowedSwipeDirection: const AllowedSwipeDirection.only(
-                left: true,
-                right: true,
-                up: true,
-              ),
-              onSwipe: _onSwipe,
-              onEnd: _refreshDiscoveryDeck,
-              cardBuilder:
-                  (
-                    context,
-                    index,
-                    horizontalOffsetPercentage,
-                    verticalOffsetPercentage,
-                  ) {
-                    if (index >= profiles.length) {
-                      return const SizedBox.shrink();
-                    }
-                    final user = profiles[index];
-                    return Transform(
-                      alignment: Alignment.center,
-                      transform: Matrix4.identity()
-                        ..setEntry(3, 2, 0.001)
-                        ..rotateY(horizontalOffsetPercentage * 0.006),
-                      child: ProfileCard(
-                        user: user,
-                        currentUser: currentUser,
-                        onTap: () {
-                          context.push('/discover/profile/${user.id}');
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth >= 700;
+              final horizontalPadding = isWide ? 24.0 : 16.0;
+              final availableWidth = max(
+                280.0,
+                constraints.maxWidth - (horizontalPadding * 2),
+              );
+              final deckWidth = min(
+                isWide ? 430.0 : availableWidth,
+                availableWidth,
+              );
+              final idealHeight = deckWidth * (isWide ? 1.48 : 1.55);
+              final deckHeight = min(
+                constraints.maxHeight,
+                max(isWide ? 520.0 : 360.0, idealHeight),
+              );
+
+              return Center(
+                child: SizedBox(
+                  width: deckWidth,
+                  height: deckHeight,
+                  child: CardSwiper(
+                    key: ValueKey(_profileStackKey),
+                    controller: _swiperController,
+                    cardsCount: profiles.length,
+                    numberOfCardsDisplayed: min(3, profiles.length),
+                    duration: const Duration(milliseconds: 140),
+                    threshold: 38,
+                    maxAngle: 18,
+                    backCardOffset: const Offset(0, -22),
+                    scale: 0.94,
+                    padding: EdgeInsets.zero,
+                    isLoop: true,
+                    showBackCardOnUndo: true,
+                    undoSwipeThreshold: 32,
+                    allowedSwipeDirection: const AllowedSwipeDirection.only(
+                      left: true,
+                      right: true,
+                      up: true,
+                    ),
+                    onSwipe: _onSwipe,
+                    onEnd: _refreshDiscoveryDeck,
+                    cardBuilder:
+                        (
+                          context,
+                          index,
+                          horizontalOffsetPercentage,
+                          verticalOffsetPercentage,
+                        ) {
+                          if (index >= profiles.length) {
+                            return const SizedBox.shrink();
+                          }
+                          final user = profiles[index];
+                          return Transform(
+                            alignment: Alignment.center,
+                            transform: Matrix4.identity()
+                              ..setEntry(3, 2, 0.001)
+                              ..rotateY(horizontalOffsetPercentage * 0.006),
+                            child: ProfileCard(
+                              user: user,
+                              currentUser: currentUser,
+                              onTap: () {
+                                context.push('/discover/profile/${user.id}');
+                              },
+                            ),
+                          );
                         },
-                      ),
-                    );
-                  },
-            ),
+                  ),
+                ),
+              );
+            },
           ),
         ),
 
-        // Action buttons
-        _ActionButtonRow(
-          onUndo: _onTapUndo,
-          isRewindBusy: _rewindInFlight,
-          onDislike: _onTapDislike,
-          onSuperLike: _onTapSuperLike,
-          onLike: _onTapLike,
-          onBoost: _onTapBoost,
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: _ActionButtonRow(
+              onUndo: _onTapUndo,
+              isRewindBusy: _rewindInFlight,
+              onDislike: _onTapDislike,
+              onSuperLike: _onTapSuperLike,
+              onLike: _onTapLike,
+              onBoost: _onTapBoost,
+            ),
+          ),
         ),
 
         SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
