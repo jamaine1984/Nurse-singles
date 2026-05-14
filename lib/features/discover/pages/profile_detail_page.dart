@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -8,6 +10,7 @@ import 'package:nightingale_heart/core/config/app_constants.dart';
 import 'package:nightingale_heart/core/config/app_theme.dart';
 import 'package:nightingale_heart/core/models/user_model.dart';
 import 'package:nightingale_heart/core/providers/app_providers.dart';
+import 'package:nightingale_heart/core/router/app_router.dart';
 import 'package:nightingale_heart/core/services/safety_service.dart';
 import 'package:nightingale_heart/core/widgets/app_network_image.dart';
 import 'package:nightingale_heart/core/widgets/shimmer_loader.dart';
@@ -46,6 +49,7 @@ class _ProfileDetailPageState extends ConsumerState<ProfileDetailPage> {
   final PageController _galleryController = PageController();
   final ScrollController _scrollController = ScrollController();
   double _headerOpacity = 1.0;
+  int _currentPhotoIndex = 0;
 
   @override
   void initState() {
@@ -70,12 +74,50 @@ class _ProfileDetailPageState extends ConsumerState<ProfileDetailPage> {
   }
 
   List<String> _getAllPhotos(UserModel user) {
+    final seen = <String>{};
     final photos = <String>[];
-    if (user.photoUrl != null && user.photoUrl!.isNotEmpty) {
-      photos.add(user.photoUrl!);
+
+    void add(String? url) {
+      final value = url?.trim();
+      if (value == null || value.isEmpty || seen.contains(value)) return;
+      seen.add(value);
+      photos.add(value);
     }
-    photos.addAll(user.gallery.where((url) => url.isNotEmpty));
+
+    add(user.photoUrl);
+    for (final url in user.gallery) {
+      add(url);
+    }
     return photos;
+  }
+
+  void _goBack() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      context.go(RoutePaths.discover);
+    }
+  }
+
+  void _goToPhoto(int index, int count) {
+    if (count <= 0) return;
+    final target = index.clamp(0, count - 1);
+    _galleryController.animateToPage(
+      target,
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  void _showPhotoGallery(List<String> photos, int initialIndex) {
+    if (photos.isEmpty) return;
+    showDialog(
+      context: context,
+      builder: (_) => _ProfileDetailPhotoDialog(
+        photos: photos,
+        initialIndex: initialIndex.clamp(0, photos.length - 1),
+      ),
+    );
   }
 
   String _t(String key) {
@@ -315,7 +357,7 @@ class _ProfileDetailPageState extends ConsumerState<ProfileDetailPage> {
     ref.watch(localeProvider);
     final theme = Theme.of(context);
     final locale = ref.read(localeProvider);
-    final screenHeight = MediaQuery.of(context).size.height;
+    final screenSize = MediaQuery.of(context).size;
 
     return Scaffold(
       body: userAsync.when(
@@ -337,89 +379,57 @@ class _ProfileDetailPageState extends ConsumerState<ProfileDetailPage> {
                 slivers: [
                   // ── Parallax header with photo gallery ──────────────
                   SliverToBoxAdapter(
-                    child: SizedBox(
-                      height: screenHeight * 0.55,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          // Photo gallery
-                          if (photos.isNotEmpty)
-                            PageView.builder(
-                              controller: _galleryController,
-                              itemCount: photos.length,
-                              itemBuilder: (context, index) {
-                                return AppNetworkImage(
-                                  imageUrl: photos[index],
-                                  fit: BoxFit.cover,
-                                  placeholder: (_, __) =>
-                                      Container(color: AppTheme.softLavender),
-                                  errorWidget: (_, __, ___) => Container(
-                                    color: AppTheme.softLavender,
-                                    child: const Icon(
-                                      Icons.person,
-                                      size: 80,
-                                      color: AppTheme.warmGray,
-                                    ),
-                                  ),
-                                );
-                              },
-                            )
-                          else
-                            Container(
-                              color: AppTheme.softLavender,
-                              child: const Icon(
-                                Icons.person,
-                                size: 100,
-                                color: AppTheme.warmGray,
-                              ),
-                            ),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isWide = constraints.maxWidth >= 700;
+                        final galleryWidth = isWide
+                            ? min(480.0, constraints.maxWidth - 48)
+                            : constraints.maxWidth;
+                        final galleryHeight = isWide
+                            ? min(620.0, max(470.0, galleryWidth * 1.28))
+                            : min(
+                                screenSize.height * 0.52,
+                                max(420.0, screenSize.width * 1.12),
+                              );
 
-                          // Gradient
-                          Positioned.fill(
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Colors.black.withValues(alpha: 0.3),
-                                    Colors.transparent,
-                                    Colors.transparent,
-                                    theme.scaffoldBackgroundColor.withValues(
-                                      alpha: 0.8,
-                                    ),
-                                    theme.scaffoldBackgroundColor,
-                                  ],
-                                  stops: const [0.0, 0.15, 0.5, 0.85, 1.0],
+                        return Padding(
+                          padding: EdgeInsets.fromLTRB(
+                            isWide ? 24 : 0,
+                            isWide ? 76 : 0,
+                            isWide ? 24 : 0,
+                            isWide ? 18 : 0,
+                          ),
+                          child: Center(
+                            child: SizedBox(
+                              width: galleryWidth,
+                              height: galleryHeight,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(
+                                  isWide ? 26 : 0,
+                                ),
+                                child: _DetailPhotoGallery(
+                                  photos: photos,
+                                  controller: _galleryController,
+                                  currentIndex: _currentPhotoIndex,
+                                  onChanged: (index) => setState(
+                                    () => _currentPhotoIndex = index,
+                                  ),
+                                  onPrevious: () => _goToPhoto(
+                                    _currentPhotoIndex - 1,
+                                    photos.length,
+                                  ),
+                                  onNext: () => _goToPhoto(
+                                    _currentPhotoIndex + 1,
+                                    photos.length,
+                                  ),
+                                  onOpenPhoto: (index) =>
+                                      _showPhotoGallery(photos, index),
                                 ),
                               ),
                             ),
                           ),
-
-                          // Page indicator
-                          if (photos.length > 1)
-                            Positioned(
-                              bottom: 60,
-                              left: 0,
-                              right: 0,
-                              child: Center(
-                                child: SmoothPageIndicator(
-                                  controller: _galleryController,
-                                  count: photos.length,
-                                  effect: WormEffect(
-                                    dotWidth: 8,
-                                    dotHeight: 8,
-                                    spacing: 6,
-                                    activeDotColor: AppTheme.deepPlum,
-                                    dotColor: Colors.white.withValues(
-                                      alpha: 0.5,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
                   ),
 
@@ -684,7 +694,7 @@ class _ProfileDetailPageState extends ConsumerState<ProfileDetailPage> {
                       children: [
                         _CircleIconButton(
                           icon: Icons.arrow_back_rounded,
-                          onTap: () => Navigator.of(context).pop(),
+                          onTap: _goBack,
                         ),
                         _CircleIconButton(
                           icon: Icons.more_vert_rounded,
@@ -757,10 +767,7 @@ class _ProfileDetailPageState extends ConsumerState<ProfileDetailPage> {
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            ShimmerLoader(
-              height: MediaQuery.of(context).size.height * 0.5,
-              borderRadius: 0,
-            ),
+            ShimmerLoader(height: 440, borderRadius: 24),
             const SizedBox(height: 16),
             ShimmerLoader.line(width: 200, height: 24),
             const SizedBox(height: 12),
@@ -813,6 +820,349 @@ class _ProfileDetailPageState extends ConsumerState<ProfileDetailPage> {
 }
 
 // ─── Helper widgets ─────────────────────────────────────────────────────────
+
+class _DetailPhotoGallery extends StatelessWidget {
+  const _DetailPhotoGallery({
+    required this.photos,
+    required this.controller,
+    required this.currentIndex,
+    required this.onChanged,
+    required this.onPrevious,
+    required this.onNext,
+    required this.onOpenPhoto,
+  });
+
+  final List<String> photos;
+  final PageController controller;
+  final int currentIndex;
+  final ValueChanged<int> onChanged;
+  final VoidCallback onPrevious;
+  final VoidCallback onNext;
+  final ValueChanged<int> onOpenPhoto;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: const Color(0xFF052F34),
+            border: Border.all(
+              color: theme.colorScheme.outline.withValues(alpha: 0.12),
+            ),
+          ),
+          child: photos.isNotEmpty
+              ? PageView.builder(
+                  controller: controller,
+                  itemCount: photos.length,
+                  onPageChanged: onChanged,
+                  itemBuilder: (context, index) {
+                    return GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => onOpenPhoto(index),
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: AppNetworkImage(
+                          imageUrl: photos[index],
+                          fit: BoxFit.contain,
+                          placeholder: (_, __) => Container(
+                            color: AppTheme.softLavender,
+                            child: const Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                          errorWidget: (_, __, ___) => Container(
+                            color: AppTheme.softLavender,
+                            child: const Icon(
+                              Icons.person,
+                              size: 80,
+                              color: AppTheme.warmGray,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                )
+              : const Center(
+                  child: Icon(
+                    Icons.person,
+                    size: 100,
+                    color: AppTheme.warmGray,
+                  ),
+                ),
+        ),
+        Positioned.fill(
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.34),
+                    Colors.transparent,
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.42),
+                  ],
+                  stops: const [0.0, 0.18, 0.66, 1.0],
+                ),
+              ),
+            ),
+          ),
+        ),
+        if (photos.length > 1) ...[
+          Positioned(
+            left: 12,
+            top: 0,
+            bottom: 0,
+            child: Center(
+              child: _GalleryArrowButton(
+                icon: Icons.chevron_left_rounded,
+                onPressed: currentIndex > 0 ? onPrevious : null,
+              ),
+            ),
+          ),
+          Positioned(
+            right: 12,
+            top: 0,
+            bottom: 0,
+            child: Center(
+              child: _GalleryArrowButton(
+                icon: Icons.chevron_right_rounded,
+                onPressed: currentIndex < photos.length - 1 ? onNext : null,
+              ),
+            ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 24,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.46),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    '${currentIndex + 1}/${photos.length}',
+                    style: GoogleFonts.plusJakartaSans(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SmoothPageIndicator(
+                  controller: controller,
+                  count: photos.length,
+                  effect: WormEffect(
+                    dotWidth: 8,
+                    dotHeight: 8,
+                    spacing: 6,
+                    activeDotColor: Colors.white,
+                    dotColor: Colors.white.withValues(alpha: 0.38),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _GalleryArrowButton extends StatelessWidget {
+  const _GalleryArrowButton({required this.icon, required this.onPressed});
+
+  final IconData icon;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton.filled(
+      onPressed: onPressed,
+      style: IconButton.styleFrom(
+        backgroundColor: Colors.black.withValues(alpha: 0.46),
+        disabledBackgroundColor: Colors.black.withValues(alpha: 0.14),
+        foregroundColor: Colors.white,
+        disabledForegroundColor: Colors.white.withValues(alpha: 0.34),
+        fixedSize: const Size.square(42),
+      ),
+      icon: Icon(icon, size: 28),
+    );
+  }
+}
+
+class _ProfileDetailPhotoDialog extends StatefulWidget {
+  const _ProfileDetailPhotoDialog({
+    required this.photos,
+    required this.initialIndex,
+  });
+
+  final List<String> photos;
+  final int initialIndex;
+
+  @override
+  State<_ProfileDetailPhotoDialog> createState() =>
+      _ProfileDetailPhotoDialogState();
+}
+
+class _ProfileDetailPhotoDialogState extends State<_ProfileDetailPhotoDialog> {
+  late final PageController _controller;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _controller = PageController(initialPage: _currentIndex);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _goTo(int index) {
+    final target = index.clamp(0, widget.photos.length - 1);
+    _controller.animateToPage(
+      target,
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog.fullscreen(
+      backgroundColor: Colors.black,
+      child: SafeArea(
+        child: Stack(
+          children: [
+            PageView.builder(
+              controller: _controller,
+              itemCount: widget.photos.length,
+              onPageChanged: (index) => setState(() => _currentIndex = index),
+              itemBuilder: (context, index) {
+                return InteractiveViewer(
+                  minScale: 1,
+                  maxScale: 4,
+                  child: Center(
+                    child: AppNetworkImage(
+                      imageUrl: widget.photos[index],
+                      fit: BoxFit.contain,
+                      placeholder: (_, __) => const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      ),
+                      errorWidget: (_, __, ___) => const Icon(
+                        Icons.broken_image,
+                        color: Colors.white,
+                        size: 56,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            Positioned(
+              top: 12,
+              right: 12,
+              child: IconButton.filled(
+                onPressed: () => Navigator.of(context).pop(),
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.white.withValues(alpha: 0.16),
+                ),
+                icon: const Icon(Icons.close_rounded, color: Colors.white),
+              ),
+            ),
+            if (widget.photos.length > 1) ...[
+              Positioned(
+                left: 16,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: _GalleryArrowButton(
+                    icon: Icons.chevron_left_rounded,
+                    onPressed: _currentIndex > 0
+                        ? () => _goTo(_currentIndex - 1)
+                        : null,
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 16,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: _GalleryArrowButton(
+                    icon: Icons.chevron_right_rounded,
+                    onPressed: _currentIndex < widget.photos.length - 1
+                        ? () => _goTo(_currentIndex + 1)
+                        : null,
+                  ),
+                ),
+              ),
+            ],
+            Positioned(
+              left: 20,
+              bottom: 28,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 7,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.18),
+                  ),
+                ),
+                child: Text(
+                  '${_currentIndex + 1}/${widget.photos.length}',
+                  style: GoogleFonts.plusJakartaSans(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ),
+            if (widget.photos.length > 1)
+              Positioned(
+                right: 20,
+                bottom: 34,
+                child: SmoothPageIndicator(
+                  controller: _controller,
+                  count: widget.photos.length,
+                  effect: WormEffect(
+                    dotWidth: 7,
+                    dotHeight: 7,
+                    spacing: 6,
+                    activeDotColor: Colors.white,
+                    dotColor: Colors.white.withValues(alpha: 0.32),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _SectionTitle extends StatelessWidget {
   const _SectionTitle({required this.title});

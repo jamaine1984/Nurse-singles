@@ -55,6 +55,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
   }
 
+  void _goBackFromProfile() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      context.go(RoutePaths.discover);
+    }
+  }
+
   String? _credentialTypeFromBadge(String? badge) {
     return switch (badge) {
       'Healthcare Worker' || 'Healthcare Worker Verified' => 'healthcareWorker',
@@ -102,6 +110,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          tooltip: _t('go_back'),
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: _goBackFromProfile,
+        ),
         title: Text(
           _t('my_profile'),
           style: GoogleFonts.playfairDisplay(fontWeight: FontWeight.w600),
