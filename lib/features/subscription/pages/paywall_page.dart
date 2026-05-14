@@ -122,12 +122,14 @@ class _PaywallPageState extends ConsumerState<PaywallPage> {
   Future<void> _buyPlan(_PlanOffer plan, _SubscriptionCatalog catalog) async {
     if (_busyProductId != null) return;
 
-    final package = catalog.packageFor(plan.productIds);
+    final package = catalog.packageFor(plan);
     final product = catalog.productFor(plan.productIds);
     final productId = package?.storeProduct.identifier ?? product?.identifier;
     if (productId == null) {
       _showSnack(
-        'This plan is visible, but the Play Console/RevenueCat product is not attached yet.',
+        kIsWeb
+            ? 'This plan is visible, but the RevenueCat Web Billing product is not attached to the web offering yet.'
+            : 'This plan is visible, but the Play Console/RevenueCat product is not attached yet.',
         AppTheme.softAmber,
       );
       return;
@@ -412,7 +414,7 @@ class _PlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final package = catalog.packageFor(plan.productIds);
+    final package = catalog.packageFor(plan);
     final product = catalog.productFor(plan.productIds);
     final productId = package?.storeProduct.identifier ?? product?.identifier;
     final isBusy = busyProductId != null && busyProductId == productId;
@@ -632,12 +634,35 @@ class _SubscriptionCatalog {
   bool get hasProducts =>
       offeringPackages.isNotEmpty || storeProducts.isNotEmpty;
 
-  Package? packageFor(List<String> productIds) {
-    for (final productId in productIds) {
+  Package? packageFor(_PlanOffer plan) {
+    for (final productId in plan.productIds) {
       for (final package in offeringPackages) {
-        if (package.storeProduct.identifier == productId ||
-            package.identifier == productId) {
+        final packageId = package.identifier.toLowerCase();
+        final storeProductId = package.storeProduct.identifier.toLowerCase();
+        final expectedId = productId.toLowerCase();
+        if (storeProductId == expectedId || packageId == expectedId) {
           return package;
+        }
+      }
+    }
+    if (kIsWeb) {
+      final planId = plan.plan.value.toLowerCase();
+      for (final package in offeringPackages) {
+        final packageId = package.identifier.toLowerCase();
+        final storeProductId = package.storeProduct.identifier.toLowerCase();
+        if (packageId.contains(planId) || storeProductId.contains(planId)) {
+          return package;
+        }
+      }
+
+      final expectedPrice =
+          (AppConstants.planFeatures[plan.plan]?['price'] as num?)?.toDouble();
+      if (expectedPrice != null) {
+        for (final package in offeringPackages) {
+          final price = package.storeProduct.price;
+          if ((price - expectedPrice).abs() < 0.01) {
+            return package;
+          }
         }
       }
     }

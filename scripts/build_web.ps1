@@ -38,7 +38,11 @@ $revenueCatKey = First-Value $values @('REVENUECAT_PUBLIC_API_KEY', 'REVENUECAT_
 $zegoAppId = First-Value $values @('ZEGO_APP_ID', 'ZEGOCLOUD_APP_ID')
 $zegoAppSign = First-Value $values @('ZEGO_APP_SIGN', 'ZEGOCLOUD_APP_SIGN')
 $environment = First-Value $values @('ENVIRONMENT')
-$appCheckWebRecaptchaSiteKey = First-Value $values @('APP_CHECK_WEB_RECAPTCHA_SITE_KEY')
+$appCheckWebRecaptchaSiteKey = First-Value $values @(
+  'APP_CHECK_WEB_RECAPTCHA_ENTERPRISE_SITE_KEY',
+  'APP_CHECK_WEB_RECAPTCHA_SITE_KEY'
+)
+$appCheckWebProvider = First-Value $values @('APP_CHECK_WEB_PROVIDER')
 
 if ($revenueCatKey) { $defines['REVENUECAT_PUBLIC_API_KEY'] = $revenueCatKey }
 if ($zegoAppId) { $defines['ZEGO_APP_ID'] = $zegoAppId }
@@ -46,6 +50,9 @@ if ($zegoAppSign) { $defines['ZEGO_APP_SIGN'] = $zegoAppSign }
 if ($environment) { $defines['ENVIRONMENT'] = $environment }
 if ($appCheckWebRecaptchaSiteKey) {
   $defines['APP_CHECK_WEB_RECAPTCHA_SITE_KEY'] = $appCheckWebRecaptchaSiteKey
+}
+if ($appCheckWebProvider) {
+  $defines['APP_CHECK_WEB_PROVIDER'] = $appCheckWebProvider
 }
 
 if ($revenueCatKey) {

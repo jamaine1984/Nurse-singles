@@ -57,13 +57,13 @@ class DefaultFirebaseOptions {
     iosBundleId: 'com.nightingaleheart.app',
   );
 
-  // Placeholder web options
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyA4Yj4M2XJp_98cF8sN9MNwo52npOYiyDA',
-    appId: '1:706493040190:android:396e8c6192f7b9dff1336f',
+    apiKey: 'AIzaSyAHSPVCAXWtdjj4BIK5oQz47T29PYjISu8',
+    appId: '1:706493040190:web:4b5906baa782fbe4f1336f',
     messagingSenderId: '706493040190',
     projectId: 'nurse-singles-international',
     storageBucket: 'nurse-singles-international.firebasestorage.app',
     authDomain: 'nurse-singles-international.firebaseapp.com',
+    measurementId: 'G-7CV3BC8R6V',
   );
 }

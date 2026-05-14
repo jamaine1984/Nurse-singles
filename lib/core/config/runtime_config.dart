@@ -38,7 +38,18 @@ class RuntimeConfig {
     dartDefine: const String.fromEnvironment(
       'APP_CHECK_WEB_RECAPTCHA_SITE_KEY',
     ),
-    envKeys: const ['APP_CHECK_WEB_RECAPTCHA_SITE_KEY'],
+    legacyDartDefine: const String.fromEnvironment(
+      'APP_CHECK_WEB_RECAPTCHA_ENTERPRISE_SITE_KEY',
+    ),
+    envKeys: const [
+      'APP_CHECK_WEB_RECAPTCHA_ENTERPRISE_SITE_KEY',
+      'APP_CHECK_WEB_RECAPTCHA_SITE_KEY',
+    ],
+  );
+
+  static String get appCheckWebProvider => _value(
+    dartDefine: const String.fromEnvironment('APP_CHECK_WEB_PROVIDER'),
+    envKeys: const ['APP_CHECK_WEB_PROVIDER'],
   );
 
   static String _value({

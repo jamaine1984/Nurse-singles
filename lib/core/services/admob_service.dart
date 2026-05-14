@@ -40,6 +40,10 @@ class AdMobService {
   /// Call once during app startup **after** `WidgetsFlutterBinding.ensureInitialized()`.
   Future<void> initAdMob() async {
     if (_initialized) return;
+    if (kIsWeb) {
+      debugPrint('[AdMobService] Skipped on web; use AdSense web ads.');
+      return;
+    }
     try {
       await MobileAds.instance.initialize();
       _initialized = true;
@@ -61,6 +65,7 @@ class AdMobService {
   ///
   /// Does nothing if an ad is already loaded or currently loading.
   void loadRewardedAd() {
+    if (kIsWeb) return;
     if (!_initialized) return;
     if (_rewardedAd != null || _isAdLoading) return;
 
@@ -118,6 +123,10 @@ class AdMobService {
   Future<bool> showRewardedAdWithCallback({
     required void Function(String rewardType, int amount) onReward,
   }) async {
+    if (kIsWeb) {
+      debugPrint('[AdMobService] Rewarded ads are unavailable on web.');
+      return false;
+    }
     if (_rewardedAd == null) {
       debugPrint('[AdMobService] No rewarded ad available');
       loadRewardedAd();
@@ -169,6 +178,10 @@ class AdMobService {
   /// Returns `null` if no ad is available or the user dismisses early.
   /// Waits for the ad to be fully dismissed before returning.
   Future<int?> showRewardedAd() async {
+    if (kIsWeb) {
+      debugPrint('[AdMobService] Rewarded ads are unavailable on web.');
+      return null;
+    }
     if (_rewardedAd == null) {
       debugPrint('[AdMobService] No rewarded ad available');
       loadRewardedAd();

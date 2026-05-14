@@ -115,8 +115,11 @@ Future<void> _activateAppCheckSafely() async {
         );
         return;
       }
+      final provider = RuntimeConfig.appCheckWebProvider;
       await FirebaseAppCheck.instance.activate(
-        webProvider: ReCaptchaV3Provider(siteKey),
+        webProvider: provider == 'recaptcha_v3'
+            ? ReCaptchaV3Provider(siteKey)
+            : ReCaptchaEnterpriseProvider(siteKey),
       );
       return;
     }
