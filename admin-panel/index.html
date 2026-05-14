@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nurse Singles Admin Panel</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #0f0a1a;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+
+    /* ─── Login Screen ───────────────────────────────────── */
+    #login-screen {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1a0a2e 0%, #0f0a1a 50%, #1a0520 100%);
+    }
+    .login-card {
+      background: rgba(30, 20, 50, 0.9);
+      border: 1px solid rgba(107, 33, 168, 0.3);
+      border-radius: 24px;
+      padding: 48px 40px;
+      width: 400px;
+      max-width: 90vw;
+      text-align: center;
+      backdrop-filter: blur(20px);
+    }
+    .login-card h1 {
+      font-size: 28px;
+      background: linear-gradient(135deg, #a855f7, #ec4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+    .login-card p { color: #94a3b8; margin-bottom: 32px; font-size: 14px; }
+    .form-group { margin-bottom: 16px; text-align: left; }
+    .form-group label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px; }
+    .form-group input {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(15, 10, 26, 0.8);
+      border: 1px solid rgba(107, 33, 168, 0.3);
+      border-radius: 12px;
+      color: #e2e8f0;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus { border-color: #a855f7; }
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #6b21a8, #ec4899);
+      border: none;
+      border-radius: 14px;
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: opacity 0.2s;
+    }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .error-msg { color: #f43f5e; font-size: 13px; margin-top: 12px; }
+
+    /* ─── Admin Panel ────────────────────────────────────── */
+    #admin-panel { display: none; }
+    .top-bar {
+      background: rgba(20, 12, 35, 0.95);
+      border-bottom: 1px solid rgba(107, 33, 168, 0.2);
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(20px);
+    }
+    .top-bar h2 {
+      font-size: 20px;
+      background: linear-gradient(135deg, #a855f7, #ec4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .top-bar .user-info { display: flex; align-items: center; gap: 12px; }
+    .top-bar .user-email { font-size: 13px; color: #94a3b8; }
+    .btn-logout {
+      padding: 8px 16px;
+      background: rgba(244, 63, 94, 0.15);
+      border: 1px solid rgba(244, 63, 94, 0.3);
+      border-radius: 10px;
+      color: #f43f5e;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-logout:hover { background: rgba(244, 63, 94, 0.25); }
+
+    /* ─── Tabs ───────────────────────────────────────────── */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 16px 24px 0;
+      border-bottom: 1px solid rgba(107, 33, 168, 0.15);
+    }
+    .tab-btn {
+      padding: 12px 24px;
+      background: transparent;
+      border: none;
+      color: #64748b;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      color: #a855f7;
+      border-bottom-color: #a855f7;
+    }
+    .tab-btn:hover:not(.active) { color: #94a3b8; }
+    .tab-content { display: none; padding: 24px; }
+    .tab-content.active { display: block; }
+
+    /* ─── Stats Grid ─────────────────────────────────────── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: rgba(30, 20, 50, 0.6);
+      border: 1px solid rgba(107, 33, 168, 0.2);
+      border-radius: 16px;
+      padding: 20px;
+    }
+    .stat-card .stat-icon {
+      width: 40px; height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      margin-bottom: 12px;
+    }
+    .stat-card .stat-value { font-size: 32px; font-weight: 700; }
+    .stat-card .stat-label { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+
+    /* ─── Verification Cards ─────────────────────────────── */
+    .verify-card {
+      background: rgba(30, 20, 50, 0.6);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 16px;
+      transition: border-color 0.2s;
+    }
+    .verify-card:hover { border-color: rgba(245, 158, 11, 0.5); }
+    .verify-header { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+    .verify-avatar {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: rgba(107, 33, 168, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .verify-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+    .verify-info { flex: 1; }
+    .verify-name { font-size: 16px; font-weight: 600; }
+    .verify-email { font-size: 12px; color: #94a3b8; }
+    .verify-time { font-size: 11px; color: #64748b; }
+    .verify-selfie {
+      width: 100%;
+      max-height: 300px;
+      border-radius: 14px;
+      object-fit: cover;
+      cursor: pointer;
+      margin-bottom: 16px;
+      transition: opacity 0.2s;
+    }
+    .verify-selfie:hover { opacity: 0.9; }
+    .verify-actions { display: flex; gap: 10px; }
+    .btn-approve {
+      flex: 1;
+      padding: 10px;
+      background: rgba(5, 150, 105, 0.15);
+      border: 1px solid rgba(5, 150, 105, 0.4);
+      border-radius: 12px;
+      color: #10b981;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-approve:hover { background: rgba(5, 150, 105, 0.3); }
+    .btn-reject {
+      flex: 1;
+      padding: 10px;
+      background: rgba(244, 63, 94, 0.15);
+      border: 1px solid rgba(244, 63, 94, 0.4);
+      border-radius: 12px;
+      color: #f43f5e;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-reject:hover { background: rgba(244, 63, 94, 0.3); }
+
+    /* ─── Users List ─────────────────────────────────────── */
+    .search-box {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(15, 10, 26, 0.8);
+      border: 1px solid rgba(107, 33, 168, 0.3);
+      border-radius: 12px;
+      color: #e2e8f0;
+      font-size: 15px;
+      outline: none;
+      margin-bottom: 16px;
+    }
+    .search-box:focus { border-color: #a855f7; }
+    .user-row {
+      background: rgba(30, 20, 50, 0.6);
+      border: 1px solid rgba(107, 33, 168, 0.15);
+      border-radius: 14px;
+      padding: 14px 18px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .user-row-avatar {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: rgba(107, 33, 168, 0.2);
+    }
+    .user-row-info { flex: 1; }
+    .user-row-name { font-size: 14px; font-weight: 600; }
+    .user-row-email { font-size: 12px; color: #94a3b8; }
+    .badge {
+      padding: 3px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge-verified { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+    .badge-pending { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+    .badge-free { background: rgba(100, 116, 139, 0.15); color: #94a3b8; }
+    .badge-premium { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #64748b;
+    }
+    .empty-state .emoji { font-size: 48px; margin-bottom: 16px; }
+    .loading { text-align: center; padding: 40px; color: #94a3b8; }
+
+    /* ─── Lightbox ────────────────────────────────────────── */
+    .lightbox {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.9);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+    .lightbox.active { display: flex; }
+    .lightbox img {
+      max-width: 90vw;
+      max-height: 90vh;
+      border-radius: 16px;
+      object-fit: contain;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ─── Login Screen ──────────────────────────────────────────────── -->
+  <div id="login-screen">
+    <div class="login-card">
+      <h1>Nurse Singles</h1>
+      <p>Admin Panel - Authorized Access Only</p>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="login-email" placeholder="admin@nursesingles.com">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="Enter password">
+      </div>
+      <button class="btn-primary" id="login-btn" onclick="handleLogin()">Sign In</button>
+      <div class="error-msg" id="login-error"></div>
+    </div>
+  </div>
+
+  <!-- ─── Admin Panel ───────────────────────────────────────────────── -->
+  <div id="admin-panel">
+    <div class="top-bar">
+      <h2>Nurse Singles Admin</h2>
+      <div class="user-info">
+        <span class="user-email" id="admin-email"></span>
+        <button class="btn-logout" onclick="handleLogout()">Sign Out</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('overview')">Overview</button>
+      <button class="tab-btn" onclick="switchTab('verify')">Verification</button>
+      <button class="tab-btn" onclick="switchTab('users')">Users</button>
+    </div>
+
+    <!-- Overview Tab -->
+    <div class="tab-content active" id="tab-overview">
+      <div class="stats-grid" id="stats-grid"></div>
+    </div>
+
+    <!-- Verification Tab -->
+    <div class="tab-content" id="tab-verify">
+      <h3 style="margin-bottom: 16px; font-size: 18px;">Pending Verifications</h3>
+      <div id="verify-list"><div class="loading">Loading...</div></div>
+    </div>
+
+    <!-- Users Tab -->
+    <div class="tab-content" id="tab-users">
+      <input class="search-box" id="user-search" placeholder="Search by name or email..." onkeyup="handleUserSearch(event)">
+      <div id="users-list">
+        <div class="empty-state">
+          <div class="emoji">&#128269;</div>
+          <p>Search for users by name or email</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Lightbox ──────────────────────────────────────────────────── -->
+  <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <img id="lightbox-img" src="" alt="Selfie">
+  </div>
+
+  <!-- ─── Firebase SDKs (Modular v10) ───────────────────────────────── -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import {
+      getAuth,
+      signInWithEmailAndPassword,
+      signOut,
+      onAuthStateChanged
+    } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+    import {
+      getFirestore,
+      collection,
+      query,
+      where,
+      orderBy,
+      limit,
+      getDocs,
+      getDoc,
+      doc,
+      updateDoc,
+      onSnapshot,
+      serverTimestamp,
+      getCountFromServer
+    } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+    // ── Firebase Config ─────────────────────────────────────────────
+    const firebaseConfig = {
+      apiKey: 'AIzaSyA4Yj4M2XJp_98cF8sN9MNwo52npOYiyDA',
+      authDomain: 'nurse-singles-international.firebaseapp.com',
+      projectId: 'nurse-singles-international',
+      storageBucket: 'nurse-singles-international.firebasestorage.app',
+      messagingSenderId: '706493040190',
+      appId: '1:706493040190:android:396e8c6192f7b9dff1336f',
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const ADMIN_EMAILS = ['admin@nursesingles.com'];
+    function isAdmin(email) {
+      if (!email) return false;
+      return ADMIN_EMAILS.includes(email) || email.includes('@admin');
+    }
+
+    let verifyUnsubscribe = null;
+
+    // ── Auth State ──────────────────────────────────────────────────
+    onAuthStateChanged(auth, (user) => {
+      if (user && isAdmin(user.email)) {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('admin-panel').style.display = 'block';
+        document.getElementById('admin-email').textContent = user.email;
+        loadOverview();
+        loadVerifications();
+      } else {
+        document.getElementById('login-screen').style.display = 'flex';
+        document.getElementById('admin-panel').style.display = 'none';
+        if (verifyUnsubscribe) { verifyUnsubscribe(); verifyUnsubscribe = null; }
+        if (user && !isAdmin(user.email)) {
+          signOut(auth);
+          document.getElementById('login-error').textContent = 'Access denied. Admin accounts only.';
+        }
+      }
+    });
+
+    // ── Login ────────────────────────────────────────────────────────
+    window.handleLogin = async function() {
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      const errorEl = document.getElementById('login-error');
+      const btn = document.getElementById('login-btn');
+
+      errorEl.textContent = '';
+      btn.disabled = true;
+      btn.textContent = 'Signing in...';
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (e) {
+        errorEl.textContent = e.code === 'auth/invalid-credential'
+          ? 'Invalid email or password.'
+          : e.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
+      }
+    };
+
+    // ── Logout ───────────────────────────────────────────────────────
+    window.handleLogout = () => signOut(auth);
+
+    // ── Tab Switching ────────────────────────────────────────────────
+    window.switchTab = function(tabName) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('tab-' + tabName).classList.add('active');
+      event.target.classList.add('active');
+    };
+
+    // ── Overview ─────────────────────────────────────────────────────
+    async function loadOverview() {
+      const grid = document.getElementById('stats-grid');
+      const stats = [
+        { icon: '&#128101;', label: 'Total Users', color: '#6b21a8', coll: 'users' },
+        { icon: '&#128149;', label: 'Total Matches', color: '#e11d48', coll: 'matches' },
+        { icon: '&#128172;', label: 'Total Chats', color: '#059669', coll: 'chats' },
+        { icon: '&#127873;', label: 'Gift Transactions', color: '#f59e0b', coll: 'gift_transactions' },
+      ];
+
+      grid.innerHTML = '';
+      for (const stat of stats) {
+        const card = document.createElement('div');
+        card.className = 'stat-card';
+        card.innerHTML = `
+          <div class="stat-icon" style="background: ${stat.color}22;">${stat.icon}</div>
+          <div class="stat-value" id="stat-${stat.coll}">...</div>
+          <div class="stat-label">${stat.label}</div>
+        `;
+        grid.appendChild(card);
+
+        try {
+          const snap = await getCountFromServer(collection(db, stat.coll));
+          document.getElementById('stat-' + stat.coll).textContent = snap.data().count;
+        } catch (e) {
+          document.getElementById('stat-' + stat.coll).textContent = '?';
+        }
+      }
+    }
+
+    // ── Verifications ────────────────────────────────────────────────
+    function loadVerifications() {
+      const container = document.getElementById('verify-list');
+      const q = query(
+        collection(db, 'users'),
+        where('verificationStatus', '==', 'pending'),
+        orderBy('verificationRequestedAt', 'desc')
+      );
+
+      if (verifyUnsubscribe) verifyUnsubscribe();
+      verifyUnsubscribe = onSnapshot(q, (snapshot) => {
+        if (snapshot.empty) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <div class="emoji">&#9989;</div>
+              <p>No pending verifications</p>
+            </div>`;
+          return;
+        }
+
+        container.innerHTML = '';
+        snapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          const userId = docSnap.id;
+          const card = document.createElement('div');
+          card.className = 'verify-card';
+          card.id = 'verify-' + userId;
+
+          const avatar = data.photoUrl
+            ? `<img src="${data.photoUrl}" alt="${data.name}">`
+            : '&#128100;';
+
+          const time = data.verificationRequestedAt
+            ? new Date(data.verificationRequestedAt.seconds * 1000).toLocaleDateString()
+            : 'Unknown';
+
+          card.innerHTML = `
+            <div class="verify-header">
+              <div class="verify-avatar">${avatar}</div>
+              <div class="verify-info">
+                <div class="verify-name">${data.name || 'Unknown'}</div>
+                <div class="verify-email">${data.email || ''}</div>
+              </div>
+              <div class="verify-time">${time}</div>
+            </div>
+            ${data.verificationSelfieUrl
+              ? `<img class="verify-selfie" src="${data.verificationSelfieUrl}" alt="Selfie" onclick="openLightbox('${data.verificationSelfieUrl}')">`
+              : '<div style="padding:40px;text-align:center;color:#64748b;background:rgba(15,10,26,0.5);border-radius:14px;margin-bottom:16px;">No selfie uploaded</div>'}
+            <div class="verify-actions">
+              <button class="btn-reject" onclick="rejectUser('${userId}', '${(data.name || '').replace(/'/g, "\\'")}')">Reject</button>
+              <button class="btn-approve" onclick="approveUser('${userId}', '${(data.name || '').replace(/'/g, "\\'")}')">Approve</button>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      }, (err) => {
+        container.innerHTML = `<div class="empty-state"><p>Error: ${err.message}</p></div>`;
+      });
+    }
+
+    // ── Approve / Reject ─────────────────────────────────────────────
+    window.approveUser = async function(userId, name) {
+      if (!confirm(`Approve verification for ${name}?`)) return;
+      try {
+        await updateDoc(doc(db, 'users', userId), {
+          verificationStatus: 'verified',
+          isVerified: true,
+          verifiedAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        alert(`${name} has been verified!`);
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    };
+
+    window.rejectUser = async function(userId, name) {
+      if (!confirm(`Reject verification for ${name}?`)) return;
+      try {
+        await updateDoc(doc(db, 'users', userId), {
+          verificationStatus: 'rejected',
+          isVerified: false,
+          updatedAt: serverTimestamp(),
+        });
+        alert(`${name} verification rejected.`);
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    };
+
+    // ── User Search ──────────────────────────────────────────────────
+    window.handleUserSearch = async function(event) {
+      if (event.key !== 'Enter') return;
+      const searchVal = document.getElementById('user-search').value.trim();
+      const container = document.getElementById('users-list');
+
+      if (!searchVal) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="emoji">&#128269;</div>
+            <p>Search for users by name or email</p>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = '<div class="loading">Searching...</div>';
+
+      try {
+        // Search by email exact match
+        const emailQ = query(
+          collection(db, 'users'),
+          where('email', '==', searchVal),
+          limit(10)
+        );
+        // Search by name prefix
+        const nameQ = query(
+          collection(db, 'users'),
+          where('name', '>=', searchVal),
+          where('name', '<=', searchVal + '\uf8ff'),
+          limit(10)
+        );
+
+        const [emailSnap, nameSnap] = await Promise.all([
+          getDocs(emailQ),
+          getDocs(nameQ),
+        ]);
+
+        const results = new Map();
+        emailSnap.forEach(d => results.set(d.id, d));
+        nameSnap.forEach(d => results.set(d.id, d));
+
+        if (results.size === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <div class="emoji">&#128533;</div>
+              <p>No users found for "${searchVal}"</p>
+            </div>`;
+          return;
+        }
+
+        container.innerHTML = '';
+        results.forEach((docSnap) => {
+          const data = docSnap.data();
+          const row = document.createElement('div');
+          row.className = 'user-row';
+
+          const avatarHtml = data.photoUrl
+            ? `<img class="user-row-avatar" src="${data.photoUrl}" alt="${data.name}">`
+            : `<div class="user-row-avatar" style="display:flex;align-items:center;justify-content:center;">&#128100;</div>`;
+
+          const verifiedBadge = data.isVerified
+            ? '<span class="badge badge-verified">Verified</span>'
+            : data.verificationStatus === 'pending'
+              ? '<span class="badge badge-pending">Pending</span>'
+              : '';
+
+          const planBadge = data.plan && data.plan !== 'free'
+            ? `<span class="badge badge-premium">${data.plan}</span>`
+            : '<span class="badge badge-free">Free</span>';
+
+          row.innerHTML = `
+            ${avatarHtml}
+            <div class="user-row-info">
+              <div class="user-row-name">${data.name || 'Unknown'} ${verifiedBadge}</div>
+              <div class="user-row-email">${data.email || ''}</div>
+            </div>
+            ${planBadge}
+          `;
+          container.appendChild(row);
+        });
+      } catch (e) {
+        container.innerHTML = `<div class="empty-state"><p>Error: ${e.message}</p></div>`;
+      }
+    };
+
+    // ── Lightbox ─────────────────────────────────────────────────────
+    window.openLightbox = function(url) {
+      document.getElementById('lightbox-img').src = url;
+      document.getElementById('lightbox').classList.add('active');
+    };
+    window.closeLightbox = function() {
+      document.getElementById('lightbox').classList.remove('active');
+    };
+
+    // ── Enter key login ──────────────────────────────────────────────
+    document.getElementById('login-password').addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') handleLogin();
+    });
+  </script>
+</body>
+</html>

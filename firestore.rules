@@ -1,0 +1,383 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function uid() {
+      return request.auth.uid;
+    }
+
+    function isOwner(userId) {
+      return signedIn() && uid() == userId;
+    }
+
+    function isAdmin() {
+      return signedIn() && (
+        request.auth.token.admin == true ||
+        (
+          request.auth.token.email is string &&
+          (
+            request.auth.token.email == 'admin@nursesingles.com' ||
+            request.auth.token.email.matches('.*@admin.*')
+          )
+        )
+      );
+    }
+
+    function changedKeys() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    function hasSelfParticipant(data) {
+      return signedIn() &&
+        (
+          (
+            data.participantMap is map &&
+            data.participantMap[uid()] == true
+          ) ||
+          (
+            data.participants is list &&
+            uid() in data.participants
+          )
+        );
+    }
+
+    function hasSelfUser(data) {
+      return signedIn() &&
+        (
+          (
+            data.users is list &&
+            uid() in data.users
+          ) ||
+          (
+            data.participantMap is map &&
+            data.participantMap[uid()] == true
+          ) ||
+          data.user1 == uid() ||
+          data.user2 == uid() ||
+          data.user1Id == uid() ||
+          data.user2Id == uid()
+        );
+    }
+
+    function hasSelfCallerReceiver(data) {
+      return signedIn() && (
+        data.callerId == uid() ||
+        data.receiverId == uid() ||
+        data.senderId == uid() ||
+        data.recipientId == uid()
+      );
+    }
+
+    function userAdminOnlyFields() {
+      return [
+        'admin',
+        'entitlements',
+        'isAdmin',
+        'isBanned',
+        'isBlocked',
+        'moderationStatus',
+        'purchaseState',
+        'reportCount',
+        'role',
+        'subscriptionStatus'
+      ];
+    }
+
+    function userSensitiveFields() {
+      return [
+        'admin',
+        'entitlements',
+        'boostAdCredits',
+        'boostExpiresAt',
+        'boostSource',
+        'boostedAt',
+        'isAdmin',
+        'isBanned',
+        'isBoosted',
+        'isBlocked',
+        'isVerified',
+        'lastBoostActivatedAt',
+        'lastDailyBonusClaimed',
+        'lastDailyBonusDate',
+        'messagesLeft',
+        'moderationStatus',
+        'plan',
+        'profileBonusClaimed',
+        'purchaseState',
+        'reportCount',
+        'revenueCat',
+        'role',
+        'subscriptionStatus',
+        'superlikesLeft',
+        'videoMinutes'
+      ];
+    }
+
+    function userCreateDefaultsAllowed() {
+      return request.resource.data.plan == 'free' &&
+        request.resource.data.videoMinutes is number &&
+        request.resource.data.videoMinutes <= 5 &&
+        request.resource.data.messagesLeft is number &&
+        request.resource.data.messagesLeft <= 10 &&
+        request.resource.data.superlikesLeft is number &&
+        request.resource.data.superlikesLeft <= 1 &&
+        request.resource.data.isBoosted == false &&
+        request.resource.data.boostExpiresAt == null &&
+        request.resource.data.boostAdCredits == 0 &&
+        request.resource.data.isVerified == false;
+    }
+
+    function userPhotoLimitAllowed() {
+      return !('gallery' in request.resource.data) ||
+        (
+          request.resource.data.gallery is list &&
+          request.resource.data.gallery.size() <= 7
+        );
+    }
+
+    function userCreateAllowed(userId) {
+      return isOwner(userId) &&
+        !request.resource.data.keys().hasAny(userAdminOnlyFields()) &&
+        userCreateDefaultsAllowed() &&
+        userPhotoLimitAllowed();
+    }
+
+    function userUpdateAllowed(userId) {
+      return isAdmin() ||
+        (
+          isOwner(userId) &&
+          !changedKeys().hasAny(userSensitiveFields()) &&
+          userPhotoLimitAllowed()
+        ) ||
+        (
+          signedIn() &&
+          changedKeys().hasOnly(['stats', 'updatedAt'])
+        );
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn();
+      allow create: if userCreateAllowed(userId);
+      allow update: if userUpdateAllowed(userId);
+      allow delete: if isOwner(userId) || isAdmin();
+
+      match /gift_inventory/{giftId} {
+        allow read, create, update, delete: if isOwner(userId) || isAdmin();
+      }
+
+      match /usage/{docId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create, update, delete: if isAdmin();
+      }
+    }
+
+    match /likes/{likeId} {
+      allow read: if signedIn() && (
+        resource.data.likerId == uid() ||
+        resource.data.likedUserId == uid() ||
+        isAdmin()
+      );
+      allow create, update: if isAdmin();
+      allow delete: if isAdmin() || (
+        signedIn() &&
+        (
+          resource.data.likerId == uid() ||
+          resource.data.likedUserId == uid()
+        )
+      );
+    }
+
+    match /swipes/{swipeId} {
+      allow read: if signedIn() && (
+        resource.data.swiperId == uid() ||
+        resource.data.swipedUserId == uid() ||
+        isAdmin()
+      );
+      allow create, update: if isAdmin();
+      allow delete: if isAdmin() || (
+        signedIn() && resource.data.swiperId == uid()
+      );
+    }
+
+    match /matches/{matchId} {
+      allow get: if hasSelfUser(resource.data) || isAdmin();
+      allow list: if hasSelfUser(resource.data) || isAdmin();
+      allow create: if hasSelfUser(request.resource.data) || isAdmin();
+      allow update: if isAdmin() || (
+        hasSelfUser(resource.data) &&
+        hasSelfUser(request.resource.data) &&
+        changedKeys().hasOnly(['lastInteraction'])
+      );
+      allow delete: if hasSelfUser(resource.data) || isAdmin();
+    }
+
+    match /chats/{chatId} {
+      allow get: if hasSelfParticipant(resource.data) || isAdmin();
+      allow list: if (
+        hasSelfParticipant(resource.data) &&
+        request.query.limit <= 100
+      ) || isAdmin();
+      allow create: if hasSelfParticipant(request.resource.data) || isAdmin();
+      allow update, delete: if hasSelfParticipant(resource.data) || isAdmin();
+
+      match /messages/{messageId} {
+        allow get: if hasSelfParticipant(
+          get(/databases/$(database)/documents/chats/$(chatId)).data
+        ) || isAdmin();
+        allow list: if hasSelfParticipant(
+          get(/databases/$(database)/documents/chats/$(chatId)).data
+        ) || isAdmin();
+        allow create: if signedIn() &&
+          request.resource.data.senderId == uid() &&
+          hasSelfParticipant(
+            get(/databases/$(database)/documents/chats/$(chatId)).data
+          );
+        allow update: if hasSelfParticipant(
+          get(/databases/$(database)/documents/chats/$(chatId)).data
+        ) || isAdmin();
+        allow delete: if isAdmin();
+      }
+    }
+
+    match /messages/{messageId} {
+      allow read: if hasSelfCallerReceiver(resource.data) || isAdmin();
+      allow create: if signedIn() &&
+        request.resource.data.senderId == uid() &&
+        request.resource.data.recipientId is string;
+      allow update, delete: if hasSelfCallerReceiver(resource.data) || isAdmin();
+    }
+
+    match /gifts/{giftId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /gift_transactions/{txId} {
+      allow read: if signedIn() && (
+        resource.data.senderId == uid() ||
+        resource.data.receiverId == uid() ||
+        isAdmin()
+      );
+      allow create: if signedIn() &&
+        request.resource.data.senderId == uid() &&
+        request.resource.data.receiverId is string;
+      allow update, delete: if isAdmin();
+    }
+
+    match /subscriptions/{subId} {
+      allow read: if isAdmin() || (
+        signedIn() && resource.data.userId == uid()
+      );
+      allow create: if signedIn() &&
+        request.resource.data.userId == uid();
+      allow update, delete: if isAdmin();
+    }
+
+    match /speed_dating_rooms/{roomId} {
+      allow read: if signedIn();
+      allow create: if signedIn() &&
+        request.resource.data.hostId == uid() &&
+        request.resource.data.currentParticipants is list &&
+        request.resource.data.currentParticipants.hasAny([uid()]);
+      allow update: if isAdmin() || (
+        signedIn() &&
+        (
+          resource.data.hostId == uid() ||
+          resource.data.currentParticipants.hasAny([uid()]) ||
+          request.resource.data.currentParticipants.hasAny([uid()])
+        )
+      );
+      allow delete: if isAdmin() || (
+        signedIn() && resource.data.hostId == uid()
+      );
+    }
+
+    match /speed_dating_sessions/{sessionId} {
+      allow read: if hasSelfParticipant(resource.data) || isAdmin();
+      allow create: if hasSelfParticipant(request.resource.data) || isAdmin();
+      allow update: if hasSelfParticipant(resource.data) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /speed_date_followups/{followUpId} {
+      allow read: if hasSelfParticipant(resource.data) || isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /video_sessions/{sessionId} {
+      allow read: if hasSelfParticipant(resource.data) ||
+        hasSelfCallerReceiver(resource.data) ||
+        isAdmin();
+      allow create: if hasSelfParticipant(request.resource.data) ||
+        hasSelfCallerReceiver(request.resource.data) ||
+        isAdmin();
+      allow update: if isAdmin() || (
+        hasSelfParticipant(resource.data) &&
+        changedKeys().hasOnly([
+          'duration',
+          'durationSeconds',
+          'endedAt',
+          'minutesUsed',
+          'status',
+          'updatedAt'
+        ])
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /call_notifications/{notifId} {
+      allow read, update, delete: if hasSelfCallerReceiver(resource.data) || isAdmin();
+      allow create: if hasSelfCallerReceiver(request.resource.data) || isAdmin();
+    }
+
+    match /posts/{postId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.userId == uid();
+      allow update: if isAdmin() ||
+        (signedIn() && resource.data.userId == uid()) ||
+        (signedIn() && changedKeys().hasOnly(['likes', 'comments']));
+      allow delete: if isAdmin() || (
+        signedIn() && resource.data.userId == uid()
+      );
+    }
+
+    match /reports/{reportId} {
+      allow read, update, delete: if isAdmin();
+      allow create: if signedIn() &&
+        request.resource.data.reporterId == uid() &&
+        request.resource.data.reportedUserId is string;
+    }
+
+    match /boostLogs/{logId} {
+      allow read: if isAdmin() || (
+        signedIn() && resource.data.userId == uid()
+      );
+      allow create: if signedIn() &&
+        request.resource.data.userId == uid();
+      allow update, delete: if isAdmin();
+    }
+
+    match /config/{docId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /announcements/{announcementId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /cost_metrics/{day}/{document=**} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

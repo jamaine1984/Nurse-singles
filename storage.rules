@@ -1,0 +1,83 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function uid() {
+      return request.auth.uid;
+    }
+
+    function isImage() {
+      return request.resource != null &&
+        request.resource.contentType.matches('image/.*');
+    }
+
+    function isAudio() {
+      return request.resource != null &&
+        request.resource.contentType.matches('audio/.*');
+    }
+
+    function under(sizeInMb) {
+      return request.resource != null &&
+        request.resource.size < sizeInMb * 1024 * 1024;
+    }
+
+    match /profile_images/{userId}/{fileName} {
+      allow read: if signedIn();
+      allow create, update: if false;
+      allow delete: if signedIn() && uid() == userId;
+    }
+
+    match /gallery_images/{userId}/{fileName} {
+      allow read: if signedIn();
+      allow create, update: if false;
+      allow delete: if signedIn() && uid() == userId;
+    }
+
+    match /post_images/{userId}/{fileName} {
+      allow read: if signedIn();
+      allow create, update: if false;
+      allow delete: if signedIn() && uid() == userId;
+    }
+
+    match /chat_images/{chatId}/{fileName} {
+      allow read: if signedIn();
+      allow create, update: if false;
+      allow delete: if signedIn();
+    }
+
+    match /pending_uploads/{userId}/{path=**} {
+      allow read: if signedIn() && uid() == userId;
+      allow create: if signedIn() &&
+        uid() == userId &&
+        under(10) &&
+        isImage();
+      allow update: if false;
+      allow delete: if signedIn() && uid() == userId;
+    }
+
+    match /chats/{chatId}/voice/{fileName} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() &&
+        under(15) &&
+        isAudio();
+      allow delete: if signedIn();
+    }
+
+    match /verification/{userId}/{fileName} {
+      allow read: if signedIn() && uid() == userId;
+      allow create, update: if signedIn() &&
+        uid() == userId &&
+        under(10) &&
+        isImage();
+      allow delete: if signedIn() && uid() == userId;
+    }
+
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}
