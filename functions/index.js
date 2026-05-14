@@ -837,13 +837,7 @@ exports.recordSwipeWithLimit = onCall(
           throw new HttpsError("failed-precondition", "This profile is unavailable");
         }
 
-        const canCreateLike = isLike && !existingLikeSnap.exists;
-        const isDuplicateSwipe = existingSwipeSnap.exists && !canCreateLike;
-        if ((isLike && existingLikeSnap.exists) || isDuplicateSwipe) {
-          result = {...result, duplicate: true};
-          return;
-        }
-
+        let usageWrite = null;
         if (eventType) {
           const config = usageEventConfig(eventType, userData.plan);
           const usageRef = userRef.collection("usage").doc(config.docId());
@@ -851,7 +845,33 @@ exports.recordSwipeWithLimit = onCall(
           const state = usageLimitState(userData, usageSnap.data() || {}, config);
           result.remaining = assertUsageAvailable(state, config, eventType);
           result.usageType = config.usageType;
-          incrementUsage(transaction, userRef, usageRef, config, targetRef);
+          usageWrite = {usageRef, config};
+        }
+
+        const canCreateLike = isLike && !existingLikeSnap.exists;
+        const isDuplicateSwipe = existingSwipeSnap.exists && !canCreateLike;
+        if ((isLike && existingLikeSnap.exists) || isDuplicateSwipe) {
+          if (usageWrite) {
+            incrementUsage(
+                transaction,
+                userRef,
+                usageWrite.usageRef,
+                usageWrite.config,
+                null,
+            );
+          }
+          result = {...result, duplicate: true};
+          return;
+        }
+
+        if (usageWrite) {
+          incrementUsage(
+              transaction,
+              userRef,
+              usageWrite.usageRef,
+              usageWrite.config,
+              targetRef,
+          );
         }
 
         const swipePayload = {

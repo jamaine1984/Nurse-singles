@@ -1,11 +1,11 @@
 import 'dart:math';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:nightingale_heart/core/config/app_constants.dart';
 import 'package:nightingale_heart/core/config/app_theme.dart';
 import 'package:nightingale_heart/core/models/user_model.dart';
+import 'package:nightingale_heart/core/widgets/app_network_image.dart';
 import 'package:nightingale_heart/features/compatibility/services/compatibility_service.dart';
 import 'package:nightingale_heart/l10n/app_localizations.dart';
 
@@ -72,7 +72,7 @@ class ProfileCard extends StatelessWidget {
             children: [
               // ── Background photo ──────────────────────────────────────
               if (photoUrl != null && photoUrl.isNotEmpty)
-                CachedNetworkImage(
+                AppNetworkImage(
                   imageUrl: photoUrl,
                   fit: BoxFit.cover,
                   placeholder: (_, __) => Container(

@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:nightingale_heart/core/config/app_constants.dart';
 import 'package:nightingale_heart/core/config/app_theme.dart';
 import 'package:nightingale_heart/core/models/user_model.dart';
 import 'package:nightingale_heart/core/providers/app_providers.dart';
 import 'package:nightingale_heart/core/services/admob_service.dart';
+import 'package:nightingale_heart/core/widgets/app_network_image.dart';
 import 'package:nightingale_heart/core/widgets/glass_card.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nightingale_heart/features/settings/pages/settings_page.dart';
@@ -217,15 +217,40 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       ? AppTheme.accentGradient
                       : AppTheme.primaryGradient,
                 ),
-                child: CircleAvatar(
-                  radius: 60,
-                  backgroundColor: AppTheme.softLavender,
-                  backgroundImage: user.displayPhoto != null
-                      ? CachedNetworkImageProvider(user.displayPhoto!)
-                      : null,
-                  child: user.displayPhoto == null
-                      ? Icon(Icons.person, size: 48, color: AppTheme.deepPlum)
-                      : null,
+                child: ClipOval(
+                  child: SizedBox(
+                    width: 120,
+                    height: 120,
+                    child: user.displayPhoto != null
+                        ? AppNetworkImage(
+                            imageUrl: user.displayPhoto!,
+                            fit: BoxFit.cover,
+                            placeholder: (_, __) => Container(
+                              color: AppTheme.softLavender,
+                              child: Icon(
+                                Icons.person,
+                                size: 48,
+                                color: AppTheme.deepPlum,
+                              ),
+                            ),
+                            errorWidget: (_, __, ___) => Container(
+                              color: AppTheme.softLavender,
+                              child: Icon(
+                                Icons.person,
+                                size: 48,
+                                color: AppTheme.deepPlum,
+                              ),
+                            ),
+                          )
+                        : Container(
+                            color: AppTheme.softLavender,
+                            child: Icon(
+                              Icons.person,
+                              size: 48,
+                              color: AppTheme.deepPlum,
+                            ),
+                          ),
+                  ),
                 ),
               ),
             ),
@@ -1332,7 +1357,7 @@ class _ProfilePhotoCarouselState extends State<_ProfilePhotoCarousel> {
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        CachedNetworkImage(
+                        AppNetworkImage(
                           imageUrl: widget.photos[index],
                           fit: BoxFit.cover,
                           placeholder: (_, __) => Container(
@@ -1442,7 +1467,7 @@ class _FullScreenPhotoGalleryState extends State<_FullScreenPhotoGallery> {
                   minScale: 1,
                   maxScale: 4,
                   child: Center(
-                    child: CachedNetworkImage(
+                    child: AppNetworkImage(
                       imageUrl: widget.photos[index],
                       fit: BoxFit.contain,
                       placeholder: (_, __) => const Center(

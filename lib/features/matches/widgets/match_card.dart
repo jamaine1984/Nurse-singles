@@ -1,7 +1,7 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:nightingale_heart/core/config/app_theme.dart';
+import 'package:nightingale_heart/core/widgets/app_network_image.dart';
 import 'package:nightingale_heart/features/matches/services/matches_service.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
@@ -46,7 +46,7 @@ class MatchCard extends StatelessWidget {
             children: [
               // ── Photo ────────────────────────────────────────────────
               if (otherPhoto.isNotEmpty)
-                CachedNetworkImage(
+                AppNetworkImage(
                   imageUrl: otherPhoto,
                   fit: BoxFit.cover,
                   placeholder: (_, __) => Container(

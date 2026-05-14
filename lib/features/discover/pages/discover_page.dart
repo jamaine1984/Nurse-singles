@@ -8,7 +8,6 @@ import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:nightingale_heart/core/config/app_constants.dart';
 import 'package:nightingale_heart/core/config/app_theme.dart';
 import 'package:nightingale_heart/core/models/message_model.dart';
@@ -16,6 +15,7 @@ import 'package:nightingale_heart/core/models/user_model.dart';
 import 'package:nightingale_heart/core/providers/app_providers.dart';
 import 'package:nightingale_heart/core/services/call_notification_service.dart';
 import 'package:nightingale_heart/core/services/usage_limits_service.dart';
+import 'package:nightingale_heart/core/widgets/app_network_image.dart';
 import 'package:nightingale_heart/core/widgets/limit_reached_dialog.dart';
 import 'package:nightingale_heart/core/widgets/shimmer_loader.dart';
 import 'package:nightingale_heart/features/discover/providers/discover_provider.dart';
@@ -1982,7 +1982,7 @@ class _MatchIdBadge extends StatelessWidget {
               width: 86,
               height: 86,
               child: imageUrl != null && imageUrl!.isNotEmpty
-                  ? CachedNetworkImage(
+                  ? AppNetworkImage(
                       imageUrl: imageUrl!,
                       fit: BoxFit.cover,
                       placeholder: (_, __) => _badgeFallback(),

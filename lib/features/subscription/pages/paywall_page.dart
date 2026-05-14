@@ -126,6 +126,10 @@ class _PaywallPageState extends ConsumerState<PaywallPage> {
     final product = catalog.productFor(plan.productIds);
     final productId = package?.storeProduct.identifier ?? product?.identifier;
     if (productId == null) {
+      debugPrint(
+        '[PaywallPage] No RevenueCat package matched ${plan.plan.value}. '
+        'Available packages: ${catalog.debugPackageSummary}',
+      );
       _showSnack(
         kIsWeb
             ? 'This plan is visible, but the RevenueCat Web Billing product is not attached to the web offering yet.'
@@ -633,6 +637,21 @@ class _SubscriptionCatalog {
 
   bool get hasProducts =>
       offeringPackages.isNotEmpty || storeProducts.isNotEmpty;
+
+  String get debugPackageSummary {
+    final packages = offeringPackages
+        .map(
+          (package) =>
+              '${package.identifier}:${package.storeProduct.identifier}:'
+              '${package.storeProduct.priceString}',
+        )
+        .join(', ');
+    final products = storeProducts
+        .map((product) => '${product.identifier}:${product.priceString}')
+        .join(', ');
+    if (packages.isEmpty && products.isEmpty) return 'none';
+    return 'packages=[$packages] products=[$products]';
+  }
 
   Package? packageFor(_PlanOffer plan) {
     for (final productId in plan.productIds) {

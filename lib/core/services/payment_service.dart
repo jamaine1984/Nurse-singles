@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:nightingale_heart/core/config/app_constants.dart';
+import 'package:nightingale_heart/core/config/runtime_config.dart';
 
 /// Provides the singleton [PaymentService] instance.
 final paymentServiceProvider = Provider<PaymentService>((ref) {
@@ -73,6 +74,12 @@ class PaymentService {
       if (apiKey.isEmpty) {
         debugPrint('[PaymentService] RevenueCat public SDK key is missing');
         return;
+      }
+      if (kIsWeb && RuntimeConfig.revenueCatWebPublicApiKey.isEmpty) {
+        debugPrint(
+          '[PaymentService] REVENUECAT_WEB_PUBLIC_API_KEY is missing; '
+          'web billing may not return Web Billing products.',
+        );
       }
 
       await Purchases.setLogLevel(kDebugMode ? LogLevel.debug : LogLevel.warn);

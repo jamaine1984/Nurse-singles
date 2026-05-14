@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -10,6 +9,7 @@ import 'package:nightingale_heart/core/config/app_theme.dart';
 import 'package:nightingale_heart/core/models/user_model.dart';
 import 'package:nightingale_heart/core/providers/app_providers.dart';
 import 'package:nightingale_heart/core/services/safety_service.dart';
+import 'package:nightingale_heart/core/widgets/app_network_image.dart';
 import 'package:nightingale_heart/core/widgets/shimmer_loader.dart';
 import 'package:nightingale_heart/features/messages/services/message_service.dart';
 import 'package:nightingale_heart/l10n/app_localizations.dart';
@@ -348,7 +348,7 @@ class _ProfileDetailPageState extends ConsumerState<ProfileDetailPage> {
                               controller: _galleryController,
                               itemCount: photos.length,
                               itemBuilder: (context, index) {
-                                return CachedNetworkImage(
+                                return AppNetworkImage(
                                   imageUrl: photos[index],
                                   fit: BoxFit.cover,
                                   placeholder: (_, __) =>

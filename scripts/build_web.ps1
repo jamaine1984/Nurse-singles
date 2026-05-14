@@ -35,6 +35,7 @@ Read-EnvFile '.env.release.local' $values
 
 $defines = @{}
 $revenueCatKey = First-Value $values @('REVENUECAT_PUBLIC_API_KEY', 'REVENUECAT_API_KEY')
+$revenueCatWebKey = First-Value $values @('REVENUECAT_WEB_PUBLIC_API_KEY')
 $zegoAppId = First-Value $values @('ZEGO_APP_ID', 'ZEGOCLOUD_APP_ID')
 $zegoAppSign = First-Value $values @('ZEGO_APP_SIGN', 'ZEGOCLOUD_APP_SIGN')
 $environment = First-Value $values @('ENVIRONMENT')
@@ -45,6 +46,7 @@ $appCheckWebRecaptchaSiteKey = First-Value $values @(
 $appCheckWebProvider = First-Value $values @('APP_CHECK_WEB_PROVIDER')
 
 if ($revenueCatKey) { $defines['REVENUECAT_PUBLIC_API_KEY'] = $revenueCatKey }
+if ($revenueCatWebKey) { $defines['REVENUECAT_WEB_PUBLIC_API_KEY'] = $revenueCatWebKey }
 if ($zegoAppId) { $defines['ZEGO_APP_ID'] = $zegoAppId }
 if ($zegoAppSign) { $defines['ZEGO_APP_SIGN'] = $zegoAppSign }
 if ($environment) { $defines['ENVIRONMENT'] = $environment }
@@ -60,6 +62,14 @@ if ($revenueCatKey) {
   if ($lowerRevenueCatKey.StartsWith('test_') -or $lowerRevenueCatKey.StartsWith('sk_')) {
     throw 'Web release builds require the RevenueCat public production SDK key. Do not use a Test Store key or secret API key.'
   }
+}
+if ($revenueCatWebKey) {
+  $lowerRevenueCatWebKey = $revenueCatWebKey.ToLowerInvariant()
+  if ($lowerRevenueCatWebKey.StartsWith('test_') -or $lowerRevenueCatWebKey.StartsWith('sk_')) {
+    throw 'Web release builds require the RevenueCat Web Billing public SDK key. Do not use a Test Store key or secret API key.'
+  }
+} elseif ($revenueCatKey -and $revenueCatKey.ToLowerInvariant().StartsWith('goog_')) {
+  Write-Warning 'REVENUECAT_WEB_PUBLIC_API_KEY is missing. The web build will initialize with the Google Play key and Web Billing products may not load.'
 }
 
 $flutterArgs = @('build', 'web', '--release')

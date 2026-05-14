@@ -1,4 +1,5 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter/foundation.dart';
 
 /// Reads runtime configuration from dart-defines first, then optional local
 /// dotenv values for developer builds.
@@ -9,9 +10,26 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class RuntimeConfig {
   RuntimeConfig._();
 
-  static String get revenueCatPublicApiKey => _value(
-    dartDefine: const String.fromEnvironment('REVENUECAT_PUBLIC_API_KEY'),
-    envKeys: const ['REVENUECAT_PUBLIC_API_KEY', 'REVENUECAT_API_KEY'],
+  static String get revenueCatPublicApiKey {
+    if (kIsWeb) {
+      final webKey = _value(
+        dartDefine: const String.fromEnvironment(
+          'REVENUECAT_WEB_PUBLIC_API_KEY',
+        ),
+        envKeys: const ['REVENUECAT_WEB_PUBLIC_API_KEY'],
+      );
+      if (webKey.isNotEmpty) return webKey;
+    }
+
+    return _value(
+      dartDefine: const String.fromEnvironment('REVENUECAT_PUBLIC_API_KEY'),
+      envKeys: const ['REVENUECAT_PUBLIC_API_KEY', 'REVENUECAT_API_KEY'],
+    );
+  }
+
+  static String get revenueCatWebPublicApiKey => _value(
+    dartDefine: const String.fromEnvironment('REVENUECAT_WEB_PUBLIC_API_KEY'),
+    envKeys: const ['REVENUECAT_WEB_PUBLIC_API_KEY'],
   );
 
   static int? get zegoAppId {

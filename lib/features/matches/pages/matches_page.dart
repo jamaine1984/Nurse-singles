@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:ui';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,6 +11,7 @@ import 'package:nightingale_heart/core/config/app_constants.dart';
 import 'package:nightingale_heart/core/models/user_model.dart';
 import 'package:nightingale_heart/core/providers/app_providers.dart';
 import 'package:nightingale_heart/core/services/admob_service.dart';
+import 'package:nightingale_heart/core/widgets/app_network_image.dart';
 import 'package:nightingale_heart/features/compatibility/services/compatibility_service.dart';
 import 'package:nightingale_heart/features/messages/providers/message_providers.dart';
 import 'package:nightingale_heart/l10n/app_localizations.dart';
@@ -888,7 +888,7 @@ class _ProfileCard extends StatelessWidget {
 
   Widget _buildPhoto() {
     if (photoUrl != null && photoUrl!.isNotEmpty) {
-      return CachedNetworkImage(
+      return AppNetworkImage(
         imageUrl: photoUrl!,
         fit: BoxFit.cover,
         placeholder: (_, __) => Container(

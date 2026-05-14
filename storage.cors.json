@@ -1,0 +1,15 @@
+[
+  {
+    "origin": [
+      "https://nurse-singles.com",
+      "https://www.nurse-singles.com",
+      "https://nurse-singles-international.web.app",
+      "https://nurse-singles-international.firebaseapp.com",
+      "http://localhost:5000",
+      "http://localhost:3000"
+    ],
+    "method": ["GET", "HEAD"],
+    "responseHeader": ["Content-Type", "Access-Control-Allow-Origin"],
+    "maxAgeSeconds": 3600
+  }
+]
