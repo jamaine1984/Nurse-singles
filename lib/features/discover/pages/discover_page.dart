@@ -766,60 +766,71 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage>
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          // Main content
-          profilesAsync.when(
-            loading: () => _buildShimmerLoading(),
-            error: (error, _) => _buildError(error, theme),
-            data: (profiles) {
-              final stackKey = profiles.map((profile) => profile.id).join('|');
-              if (!_profilesLoaded || stackKey != _profileStackKey) {
-                _profiles = profiles;
-                _profilesLoaded = true;
-                _profileStackKey = stackKey;
-              }
-              if (_profiles.isEmpty) {
-                return _buildEmptyState(theme);
-              }
-              return _buildSwiper(_profiles, theme, currentUser);
-            },
-          ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final showWideBackdrop = constraints.maxWidth >= 700;
 
-          // Swipe feedback overlays
-          if (_showLike)
-            _SwipeFeedback(
-              icon: Icons.favorite_rounded,
-              color: const Color(0xFF22C55E),
-              label: _t('like_action'),
-            ),
-          if (_showNope)
-            _SwipeFeedback(
-              icon: Icons.close_rounded,
-              color: AppTheme.warmRose,
-              label: _t('nope_action'),
-            ),
-          if (_showSuperLike)
-            _SwipeFeedback(
-              icon: Icons.star_rounded,
-              color: AppTheme.softAmber,
-              label: _t('super_like_action'),
-            ),
+          return Stack(
+            children: [
+              if (showWideBackdrop)
+                const Positioned.fill(child: _DiscoverWideBackdrop()),
 
-          // Match overlay
-          if (_showMatchOverlay && _matchedUser != null)
-            _MatchOverlay(
-              matchedUser: _matchedUser!,
-              currentUser: currentUser,
-              isOpeningChat: _openingMatchChat,
-              isSendingShiftReport: _sendingShiftReport,
-              isStartingVideoIntro: _startingMatchVideoIntro,
-              onSendShiftReport: _sendShiftReport,
-              onStartChat: _openMatchedChat,
-              onScheduleVideoIntro: _startMatchVideoIntro,
-              onKeepSwiping: _dismissMatch,
-            ),
-        ],
+              // Main content
+              profilesAsync.when(
+                loading: () => _buildShimmerLoading(),
+                error: (error, _) => _buildError(error, theme),
+                data: (profiles) {
+                  final stackKey = profiles
+                      .map((profile) => profile.id)
+                      .join('|');
+                  if (!_profilesLoaded || stackKey != _profileStackKey) {
+                    _profiles = profiles;
+                    _profilesLoaded = true;
+                    _profileStackKey = stackKey;
+                  }
+                  if (_profiles.isEmpty) {
+                    return _buildEmptyState(theme);
+                  }
+                  return _buildSwiper(_profiles, theme, currentUser);
+                },
+              ),
+
+              // Swipe feedback overlays
+              if (_showLike)
+                _SwipeFeedback(
+                  icon: Icons.favorite_rounded,
+                  color: const Color(0xFF22C55E),
+                  label: _t('like_action'),
+                ),
+              if (_showNope)
+                _SwipeFeedback(
+                  icon: Icons.close_rounded,
+                  color: AppTheme.warmRose,
+                  label: _t('nope_action'),
+                ),
+              if (_showSuperLike)
+                _SwipeFeedback(
+                  icon: Icons.star_rounded,
+                  color: AppTheme.softAmber,
+                  label: _t('super_like_action'),
+                ),
+
+              // Match overlay
+              if (_showMatchOverlay && _matchedUser != null)
+                _MatchOverlay(
+                  matchedUser: _matchedUser!,
+                  currentUser: currentUser,
+                  isOpeningChat: _openingMatchChat,
+                  isSendingShiftReport: _sendingShiftReport,
+                  isStartingVideoIntro: _startingMatchVideoIntro,
+                  onSendShiftReport: _sendShiftReport,
+                  onStartChat: _openMatchedChat,
+                  onScheduleVideoIntro: _startMatchVideoIntro,
+                  onKeepSwiping: _dismissMatch,
+                ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -1242,6 +1253,55 @@ class _ActionButton extends StatelessWidget {
 }
 
 // ─── Swipe feedback overlay ─────────────────────────────────────────────────
+
+class _DiscoverWideBackdrop extends StatelessWidget {
+  const _DiscoverWideBackdrop();
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: const BoxDecoration(color: Color(0xFFEAF6F6)),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset(
+            'assets/images/discover/discover_desktop_bg.png',
+            fit: BoxFit.cover,
+            alignment: Alignment.center,
+          ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.white.withValues(alpha: 0.60),
+                  Colors.white.withValues(alpha: 0.26),
+                  const Color(0xFF0F766E).withValues(alpha: 0.18),
+                ],
+                stops: const [0.0, 0.50, 1.0],
+              ),
+            ),
+          ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                center: Alignment.center,
+                radius: 0.68,
+                colors: [
+                  Colors.white.withValues(alpha: 0.58),
+                  Colors.white.withValues(alpha: 0.16),
+                  Colors.transparent,
+                ],
+                stops: const [0.0, 0.54, 1.0],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _SwipeFeedback extends StatelessWidget {
   const _SwipeFeedback({
