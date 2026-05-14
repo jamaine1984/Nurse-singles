@@ -38,11 +38,15 @@ $revenueCatKey = First-Value $values @('REVENUECAT_PUBLIC_API_KEY', 'REVENUECAT_
 $zegoAppId = First-Value $values @('ZEGO_APP_ID', 'ZEGOCLOUD_APP_ID')
 $zegoAppSign = First-Value $values @('ZEGO_APP_SIGN', 'ZEGOCLOUD_APP_SIGN')
 $environment = First-Value $values @('ENVIRONMENT')
+$appCheckWebRecaptchaSiteKey = First-Value $values @('APP_CHECK_WEB_RECAPTCHA_SITE_KEY')
 
 if ($revenueCatKey) { $defines['REVENUECAT_PUBLIC_API_KEY'] = $revenueCatKey }
 if ($zegoAppId) { $defines['ZEGO_APP_ID'] = $zegoAppId }
 if ($zegoAppSign) { $defines['ZEGO_APP_SIGN'] = $zegoAppSign }
 if ($environment) { $defines['ENVIRONMENT'] = $environment }
+if ($appCheckWebRecaptchaSiteKey) {
+  $defines['APP_CHECK_WEB_RECAPTCHA_SITE_KEY'] = $appCheckWebRecaptchaSiteKey
+}
 
 if ($revenueCatKey) {
   $lowerRevenueCatKey = $revenueCatKey.ToLowerInvariant()
@@ -66,6 +70,9 @@ $redactedDefines = if ($defines.Count -gt 0) {
 Write-Host "Running flutter build web with dart-defines: $redactedDefines"
 flutter @flutterArgs
 
+Get-ChildItem -LiteralPath 'build\web' -Filter 'flutter_bootstrap.*.js' -File -ErrorAction SilentlyContinue | Remove-Item -Force
+Get-ChildItem -LiteralPath 'build\web' -Filter 'main.dart.*.js' -File -ErrorAction SilentlyContinue | Remove-Item -Force
+
 $publicRoot = (Resolve-Path public).Path
 Get-ChildItem -LiteralPath public -Recurse -File | ForEach-Object {
   $relativePath = $_.FullName.Substring($publicRoot.Length).TrimStart('\', '/')
@@ -79,4 +86,26 @@ Get-ChildItem -LiteralPath public -Recurse -File | ForEach-Object {
     New-Item -ItemType Directory -Path $destinationDirectory | Out-Null
   }
   Copy-Item -LiteralPath $_.FullName -Destination $destination -Force
+}
+
+$indexPath = Join-Path 'build\web' 'index.html'
+if (Test-Path $indexPath) {
+  $bootstrapVersion = Get-Date -Format 'yyyyMMddHHmmss'
+  $bootstrapSource = Join-Path 'build\web' 'flutter_bootstrap.js'
+  $bootstrapFileName = "flutter_bootstrap.$bootstrapVersion.js"
+  $mainSource = Join-Path 'build\web' 'main.dart.js'
+  $mainFileName = "main.dart.$bootstrapVersion.js"
+  if (Test-Path $mainSource) {
+    Copy-Item -LiteralPath $mainSource -Destination (Join-Path 'build\web' $mainFileName) -Force
+  }
+  if (Test-Path $bootstrapSource) {
+    $bootstrapDestination = Join-Path 'build\web' $bootstrapFileName
+    Copy-Item -LiteralPath $bootstrapSource -Destination $bootstrapDestination -Force
+    $bootstrapContent = Get-Content -LiteralPath $bootstrapDestination -Raw
+    $bootstrapContent = $bootstrapContent -replace '"mainJsPath":"main\.dart\.js"', "`"mainJsPath`":`"$mainFileName`""
+    Set-Content -LiteralPath $bootstrapDestination -Value $bootstrapContent -NoNewline
+  }
+  $indexHtml = Get-Content -LiteralPath $indexPath -Raw
+  $indexHtml = $indexHtml -replace 'flutter_bootstrap(\.\d{14})?\.js(\?v=[^"]*)?', $bootstrapFileName
+  Set-Content -LiteralPath $indexPath -Value $indexHtml -NoNewline
 }

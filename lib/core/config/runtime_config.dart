@@ -34,6 +34,13 @@ class RuntimeConfig {
     envKeys: const ['APP_CHECK_ANDROID_PROVIDER'],
   ).toLowerCase();
 
+  static String get appCheckWebRecaptchaSiteKey => _value(
+    dartDefine: const String.fromEnvironment(
+      'APP_CHECK_WEB_RECAPTCHA_SITE_KEY',
+    ),
+    envKeys: const ['APP_CHECK_WEB_RECAPTCHA_SITE_KEY'],
+  );
+
   static String _value({
     required String dartDefine,
     String legacyDartDefine = '',

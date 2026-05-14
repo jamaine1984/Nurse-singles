@@ -66,28 +66,81 @@ Future<void> main() async {
 }
 
 Future<void> _configureFirebaseRuntime() async {
+  _configureErrorReporting();
+  await _enableAnalyticsSafely();
+  await _activateAppCheckSafely();
+  _configureFirestoreCacheSafely();
+}
+
+void _configureErrorReporting() {
+  if (kIsWeb) {
+    FlutterError.onError = (details) {
+      FlutterError.presentError(details);
+      debugPrint('[main] Flutter error: ${details.exception}');
+    };
+    PlatformDispatcher.instance.onError = (error, stackTrace) {
+      debugPrint('[main] Unhandled web error: $error');
+      return false;
+    };
+    return;
+  }
+
   FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
   PlatformDispatcher.instance.onError = (error, stackTrace) {
     FirebaseCrashlytics.instance.recordError(error, stackTrace, fatal: true);
     return true;
   };
 
-  await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
-    !kDebugMode,
+  unawaited(
+    FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(!kDebugMode),
   );
-  await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(!kDebugMode);
+}
 
-  await FirebaseAppCheck.instance.activate(
-    androidProvider: _androidAppCheckProvider(),
-    appleProvider: kDebugMode
-        ? AppleProvider.debug
-        : AppleProvider.appAttestWithDeviceCheckFallback,
-  );
+Future<void> _enableAnalyticsSafely() async {
+  try {
+    await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(!kDebugMode);
+  } catch (error) {
+    debugPrint('[main] Firebase Analytics setup skipped: $error');
+  }
+}
 
-  FirebaseFirestore.instance.settings = const Settings(
-    persistenceEnabled: true,
-    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
-  );
+Future<void> _activateAppCheckSafely() async {
+  try {
+    if (kIsWeb) {
+      final siteKey = RuntimeConfig.appCheckWebRecaptchaSiteKey;
+      if (siteKey.isEmpty) {
+        debugPrint(
+          '[main] APP_CHECK_WEB_RECAPTCHA_SITE_KEY missing; '
+          'App Check not activated on web.',
+        );
+        return;
+      }
+      await FirebaseAppCheck.instance.activate(
+        webProvider: ReCaptchaV3Provider(siteKey),
+      );
+      return;
+    }
+
+    await FirebaseAppCheck.instance.activate(
+      androidProvider: _androidAppCheckProvider(),
+      appleProvider: kDebugMode
+          ? AppleProvider.debug
+          : AppleProvider.appAttestWithDeviceCheckFallback,
+    );
+  } catch (error) {
+    debugPrint('[main] Firebase App Check setup skipped: $error');
+  }
+}
+
+void _configureFirestoreCacheSafely() {
+  try {
+    FirebaseFirestore.instance.settings = const Settings(
+      persistenceEnabled: true,
+      cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+    );
+  } catch (error) {
+    debugPrint('[main] Firestore cache setup skipped: $error');
+  }
 }
 
 AndroidProvider _androidAppCheckProvider() {
@@ -112,8 +165,17 @@ Future<void> _initializeDeferredServices() async {
       await initialize();
     } catch (error, stackTrace) {
       debugPrint('[main] Deferred service failed: $error');
-      await FirebaseCrashlytics.instance.recordError(error, stackTrace);
+      await _recordNonFatal(error, stackTrace);
     }
+  }
+}
+
+Future<void> _recordNonFatal(Object error, StackTrace stackTrace) async {
+  if (kIsWeb) return;
+  try {
+    await FirebaseCrashlytics.instance.recordError(error, stackTrace);
+  } catch (recordError) {
+    debugPrint('[main] Crashlytics record skipped: $recordError');
   }
 }
 
