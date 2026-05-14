@@ -41,6 +41,8 @@
 
   <title>Nurse Singles International</title>
   <link rel="manifest" href="manifest.json">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4142591817172956"
+     crossorigin="anonymous"></script>
   <style>
     #pwa-install-banner {
       align-items: center;
@@ -159,11 +161,14 @@
       var rewardedPath = config.gamRewardedAdUnitPath || '';
 
       if (/^ca-pub-\d+$/.test(publisherId)) {
-        var adsenseScript = document.createElement('script');
-        adsenseScript.async = true;
-        adsenseScript.crossOrigin = 'anonymous';
-        adsenseScript.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' + encodeURIComponent(publisherId);
-        document.head.appendChild(adsenseScript);
+        var adsenseSrc = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' + encodeURIComponent(publisherId);
+        if (!document.querySelector('script[src="' + adsenseSrc + '"]')) {
+          var adsenseScript = document.createElement('script');
+          adsenseScript.async = true;
+          adsenseScript.crossOrigin = 'anonymous';
+          adsenseScript.src = adsenseSrc;
+          document.head.appendChild(adsenseScript);
+        }
       }
 
       window.googletag = window.googletag || { cmd: [] };
