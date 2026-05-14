@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +9,7 @@ import 'package:nightingale_heart/core/config/app_constants.dart';
 import 'package:nightingale_heart/core/models/gift_model.dart';
 import 'package:nightingale_heart/core/providers/app_providers.dart';
 import 'package:nightingale_heart/core/services/admob_service.dart';
+import 'package:nightingale_heart/core/services/web_rewarded_ad_service.dart';
 import 'package:nightingale_heart/features/gifts/services/gift_service.dart';
 
 // ─── Theme Colors ───────────────────────────────────────────────────────────
@@ -105,9 +107,7 @@ class _GiftStorePageState extends ConsumerState<GiftStorePage> {
   List<GiftModel> get _filteredGifts {
     final tab = _tabs[_selectedCategoryIndex];
     if (tab.category == null) return GiftModel.allGifts;
-    return GiftModel.allGifts
-        .where((g) => g.category == tab.category)
-        .toList();
+    return GiftModel.allGifts.where((g) => g.category == tab.category).toList();
   }
 
   @override
@@ -117,8 +117,10 @@ class _GiftStorePageState extends ConsumerState<GiftStorePage> {
         ? ref.watch(giftInventoryMapProvider(userId))
         : const AsyncValue<Map<String, int>>.data({});
     final inventoryMap = inventoryMapAsync.valueOrNull ?? {};
-    final totalInventoryCount =
-        inventoryMap.values.fold<int>(0, (sum, qty) => sum + qty);
+    final totalInventoryCount = inventoryMap.values.fold<int>(
+      0,
+      (sum, qty) => sum + qty,
+    );
 
     return Scaffold(
       body: Container(
@@ -126,11 +128,7 @@ class _GiftStorePageState extends ConsumerState<GiftStorePage> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1A0A2E),
-              Color(0xFF16082A),
-              Color(0xFF0F0620),
-            ],
+            colors: [Color(0xFF1A0A2E), Color(0xFF16082A), Color(0xFF0F0620)],
           ),
         ),
         child: CustomScrollView(
@@ -228,8 +226,10 @@ class _GiftStorePageState extends ConsumerState<GiftStorePage> {
                 height: 52,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   itemCount: _tabs.length,
                   separatorBuilder: (_, __) => const SizedBox(width: 8),
                   itemBuilder: (context, index) {
@@ -282,26 +282,23 @@ class _GiftStorePageState extends ConsumerState<GiftStorePage> {
                   crossAxisSpacing: 10,
                   childAspectRatio: 0.65,
                 ),
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final gifts = _filteredGifts;
-                    if (index >= gifts.length) return null;
-                    final gift = gifts[index];
-                    final ownedQty = inventoryMap[gift.id] ?? 0;
-                    final categoryTab = _tabs[_selectedCategoryIndex];
-                    return _GiftGridCard(
-                      gift: gift,
-                      accentColor: categoryTab.color,
-                      ownedQuantity: ownedQty,
-                      isClaiming: _isClaimingGift,
-                      onClaim: () => _claimGift(gift),
-                    ).animate().fadeIn(
-                          duration: 300.ms,
-                          delay: (50 * (index % 6)).ms,
-                        );
-                  },
-                  childCount: _filteredGifts.length,
-                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final gifts = _filteredGifts;
+                  if (index >= gifts.length) return null;
+                  final gift = gifts[index];
+                  final ownedQty = inventoryMap[gift.id] ?? 0;
+                  final categoryTab = _tabs[_selectedCategoryIndex];
+                  return _GiftGridCard(
+                    gift: gift,
+                    accentColor: categoryTab.color,
+                    ownedQuantity: ownedQty,
+                    isClaiming: _isClaimingGift,
+                    onClaim: () => _claimGift(gift),
+                  ).animate().fadeIn(
+                    duration: 300.ms,
+                    delay: (50 * (index % 6)).ms,
+                  );
+                }, childCount: _filteredGifts.length),
               ),
             ),
           ],
@@ -333,7 +330,7 @@ class _GiftStorePageState extends ConsumerState<GiftStorePage> {
       if (!mounted) return;
 
       if (!adMobService.isRewardedAdReady) {
-        _showErrorSnackBar('Ad is loading. Please try again in a moment.');
+        _showErrorSnackBar(_rewardedAdUnavailableMessage());
         return;
       }
 
@@ -379,13 +376,13 @@ class _GiftStorePageState extends ConsumerState<GiftStorePage> {
           _showErrorSnackBar('Failed to claim gift. Please try again.');
         }
       } else if (!shown) {
-        _showErrorSnackBar('Could not show ad. Please try again.');
+        _showErrorSnackBar(_rewardedAdUnavailableMessage());
       } else {
         _showErrorSnackBar('Watch the full ad to claim this gift.');
       }
     } catch (e) {
       if (mounted) {
-        _showErrorSnackBar('Ad not available right now. Try again later.');
+        _showErrorSnackBar(_rewardedAdUnavailableMessage());
       }
     } finally {
       if (mounted) {
@@ -394,15 +391,21 @@ class _GiftStorePageState extends ConsumerState<GiftStorePage> {
     }
   }
 
+  String _rewardedAdUnavailableMessage() {
+    if (kIsWeb) {
+      final reason = WebRewardedAdService.instance.unavailableReason;
+      if (reason.isNotEmpty) return reason;
+    }
+    return 'Ad not available right now. Try again later.';
+  }
+
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         behavior: SnackBarBehavior.floating,
         backgroundColor: _kWarmRose,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
@@ -520,8 +523,10 @@ class _GiftGridCard extends StatelessWidget {
               // Owned badge
               if (_isOwned)
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF059669).withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
@@ -550,10 +555,7 @@ class _GiftGridCard extends StatelessWidget {
                 const SizedBox(height: 16),
 
               // Emoji
-              Text(
-                gift.emoji,
-                style: const TextStyle(fontSize: 40),
-              ),
+              Text(gift.emoji, style: const TextStyle(fontSize: 40)),
               const SizedBox(height: 6),
 
               // Name
@@ -576,8 +578,10 @@ class _GiftGridCard extends StatelessWidget {
               // Claim button or "In Inventory" label
               if (_isOwned)
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF059669).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
@@ -593,8 +597,10 @@ class _GiftGridCard extends StatelessWidget {
                 )
               else
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [_kDeepPlum, _kWarmRose],

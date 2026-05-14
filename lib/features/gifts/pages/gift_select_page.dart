@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +8,7 @@ import 'package:nightingale_heart/core/config/app_constants.dart';
 import 'package:nightingale_heart/core/models/gift_model.dart';
 import 'package:nightingale_heart/core/providers/app_providers.dart';
 import 'package:nightingale_heart/core/services/admob_service.dart';
+import 'package:nightingale_heart/core/services/web_rewarded_ad_service.dart';
 import 'package:nightingale_heart/features/gifts/services/gift_service.dart';
 
 // ─── Theme Colors ───────────────────────────────────────────────────────────
@@ -33,15 +35,60 @@ class _CategoryFilter {
 }
 
 const List<_CategoryFilter> _categories = [
-  _CategoryFilter(label: 'All', category: null, icon: Icons.grid_view_rounded, color: _kDeepPlum),
-  _CategoryFilter(label: 'Medical', category: GiftCategory.medical, icon: Icons.local_hospital_rounded, color: _kEmerald),
-  _CategoryFilter(label: 'Romantic', category: GiftCategory.romantic, icon: Icons.favorite_rounded, color: _kWarmRose),
-  _CategoryFilter(label: 'Luxury', category: GiftCategory.luxury, icon: Icons.diamond_rounded, color: _kSoftAmber),
-  _CategoryFilter(label: 'Food & Drink', category: GiftCategory.foodDrink, icon: Icons.restaurant_rounded, color: Color(0xFFEA580C)),
-  _CategoryFilter(label: 'Tech', category: GiftCategory.tech, icon: Icons.devices_rounded, color: Color(0xFF2563EB)),
-  _CategoryFilter(label: 'Nature', category: GiftCategory.nature, icon: Icons.eco_rounded, color: Color(0xFF16A34A)),
-  _CategoryFilter(label: 'Fun', category: GiftCategory.fun, icon: Icons.celebration_rounded, color: Color(0xFFDB2777)),
-  _CategoryFilter(label: 'Special', category: GiftCategory.special, icon: Icons.auto_awesome_rounded, color: Color(0xFF7C3AED)),
+  _CategoryFilter(
+    label: 'All',
+    category: null,
+    icon: Icons.grid_view_rounded,
+    color: _kDeepPlum,
+  ),
+  _CategoryFilter(
+    label: 'Medical',
+    category: GiftCategory.medical,
+    icon: Icons.local_hospital_rounded,
+    color: _kEmerald,
+  ),
+  _CategoryFilter(
+    label: 'Romantic',
+    category: GiftCategory.romantic,
+    icon: Icons.favorite_rounded,
+    color: _kWarmRose,
+  ),
+  _CategoryFilter(
+    label: 'Luxury',
+    category: GiftCategory.luxury,
+    icon: Icons.diamond_rounded,
+    color: _kSoftAmber,
+  ),
+  _CategoryFilter(
+    label: 'Food & Drink',
+    category: GiftCategory.foodDrink,
+    icon: Icons.restaurant_rounded,
+    color: Color(0xFFEA580C),
+  ),
+  _CategoryFilter(
+    label: 'Tech',
+    category: GiftCategory.tech,
+    icon: Icons.devices_rounded,
+    color: Color(0xFF2563EB),
+  ),
+  _CategoryFilter(
+    label: 'Nature',
+    category: GiftCategory.nature,
+    icon: Icons.eco_rounded,
+    color: Color(0xFF16A34A),
+  ),
+  _CategoryFilter(
+    label: 'Fun',
+    category: GiftCategory.fun,
+    icon: Icons.celebration_rounded,
+    color: Color(0xFFDB2777),
+  ),
+  _CategoryFilter(
+    label: 'Special',
+    category: GiftCategory.special,
+    icon: Icons.auto_awesome_rounded,
+    color: Color(0xFF7C3AED),
+  ),
 ];
 
 // ─── Gift Select Page ───────────────────────────────────────────────────────
@@ -97,8 +144,10 @@ class _GiftSelectPageState extends ConsumerState<GiftSelectPage>
         ? ref.watch(giftInventoryMapProvider(userId))
         : const AsyncValue<Map<String, int>>.data({});
     final inventoryMap = inventoryMapAsync.valueOrNull ?? {};
-    final totalInventory =
-        inventoryMap.values.fold<int>(0, (sum, qty) => sum + qty);
+    final totalInventory = inventoryMap.values.fold<int>(
+      0,
+      (sum, qty) => sum + qty,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -165,9 +214,8 @@ class _GiftSelectPageState extends ConsumerState<GiftSelectPage>
     final inventoryAsync = ref.watch(giftInventoryProvider(userId));
 
     return inventoryAsync.when(
-      loading: () => const Center(
-        child: CircularProgressIndicator(color: _kDeepPlum),
-      ),
+      loading: () =>
+          const Center(child: CircularProgressIndicator(color: _kDeepPlum)),
       error: (e, _) => Center(child: Text('Error: $e')),
       data: (items) {
         if (items.isEmpty) {
@@ -202,7 +250,10 @@ class _GiftSelectPageState extends ConsumerState<GiftSelectPage>
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
                     onPressed: () => _tabController.animateTo(1),
-                    icon: const Icon(Icons.play_circle_filled_rounded, size: 20),
+                    icon: const Icon(
+                      Icons.play_circle_filled_rounded,
+                      size: 20,
+                    ),
                     label: Text(
                       'Claim a Gift',
                       style: GoogleFonts.plusJakartaSans(
@@ -240,13 +291,8 @@ class _GiftSelectPageState extends ConsumerState<GiftSelectPage>
             final item = items[index];
             return _InventoryGiftCard(
               item: item,
-              onTap: _isBusy
-                  ? null
-                  : () => _sendFromInventory(userId, item),
-            ).animate().fadeIn(
-                  duration: 250.ms,
-                  delay: (40 * (index % 6)).ms,
-                );
+              onTap: _isBusy ? null : () => _sendFromInventory(userId, item),
+            ).animate().fadeIn(duration: 250.ms, delay: (40 * (index % 6)).ms);
           },
         );
       },
@@ -264,15 +310,16 @@ class _GiftSelectPageState extends ConsumerState<GiftSelectPage>
           child: Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [_kDeepPlum, _kWarmRose],
-              ),
+              gradient: const LinearGradient(colors: [_kDeepPlum, _kWarmRose]),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
               children: [
-                const Icon(Icons.play_circle_filled_rounded,
-                    color: Colors.white, size: 28),
+                const Icon(
+                  Icons.play_circle_filled_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -316,8 +363,11 @@ class _GiftSelectPageState extends ConsumerState<GiftSelectPage>
                 label: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(cat.icon, size: 15,
-                        color: isSelected ? Colors.white : cat.color),
+                    Icon(
+                      cat.icon,
+                      size: 15,
+                      color: isSelected ? Colors.white : cat.color,
+                    ),
                     const SizedBox(width: 5),
                     Text(
                       cat.label,
@@ -366,9 +416,9 @@ class _GiftSelectPageState extends ConsumerState<GiftSelectPage>
                 isBusy: _isBusy,
                 onClaim: () => _claimGift(userId!, gift),
               ).animate().fadeIn(
-                    duration: 250.ms,
-                    delay: (40 * (index % 6)).ms,
-                  );
+                duration: 250.ms,
+                delay: (40 * (index % 6)).ms,
+              );
             },
           ),
         ),
@@ -378,10 +428,7 @@ class _GiftSelectPageState extends ConsumerState<GiftSelectPage>
 
   // ─── Send from Inventory ────────────────────────────────────────────────
 
-  Future<void> _sendFromInventory(
-    String userId,
-    InventoryItem item,
-  ) async {
+  Future<void> _sendFromInventory(String userId, InventoryItem item) async {
     final currentUser = ref.read(currentUserProvider).valueOrNull;
     if (currentUser == null) return;
 
@@ -434,9 +481,7 @@ class _GiftSelectPageState extends ConsumerState<GiftSelectPage>
           ),
           Container(
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [_kDeepPlum, _kWarmRose],
-              ),
+              gradient: const LinearGradient(colors: [_kDeepPlum, _kWarmRose]),
               borderRadius: BorderRadius.circular(12),
             ),
             child: ElevatedButton(
@@ -444,8 +489,10 @@ class _GiftSelectPageState extends ConsumerState<GiftSelectPage>
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.transparent,
                 shadowColor: Colors.transparent,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
               ),
               child: Text(
                 'Send Gift',
@@ -497,7 +544,9 @@ class _GiftSelectPageState extends ConsumerState<GiftSelectPage>
           ),
           behavior: SnackBarBehavior.floating,
           backgroundColor: _kEmerald,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
     } else {
@@ -532,7 +581,7 @@ class _GiftSelectPageState extends ConsumerState<GiftSelectPage>
       if (!mounted) return;
 
       if (!adMob.isRewardedAdReady) {
-        _showError('Ad is loading. Please try again in a moment.');
+        _showError(_rewardedAdUnavailableMessage());
         return;
       }
 
@@ -579,17 +628,25 @@ class _GiftSelectPageState extends ConsumerState<GiftSelectPage>
           _showError('Failed to claim gift.');
         }
       } else if (!shown) {
-        _showError('Could not show ad. Please try again.');
+        _showError(_rewardedAdUnavailableMessage());
       } else {
         _showError('Watch the full ad to claim this gift.');
       }
     } catch (e) {
       if (mounted) {
-        _showError('Ad not available right now. Try again later.');
+        _showError(_rewardedAdUnavailableMessage());
       }
     } finally {
       if (mounted) setState(() => _isBusy = false);
     }
+  }
+
+  String _rewardedAdUnavailableMessage() {
+    if (kIsWeb) {
+      final reason = WebRewardedAdService.instance.unavailableReason;
+      if (reason.isNotEmpty) return reason;
+    }
+    return 'Ad not available right now. Try again later.';
   }
 
   void _showError(String message) {
@@ -607,10 +664,7 @@ class _GiftSelectPageState extends ConsumerState<GiftSelectPage>
 // ─── Inventory Gift Card ─────────────────────────────────────────────────────
 
 class _InventoryGiftCard extends StatelessWidget {
-  const _InventoryGiftCard({
-    required this.item,
-    this.onTap,
-  });
+  const _InventoryGiftCard({required this.item, this.onTap});
 
   final InventoryItem item;
   final VoidCallback? onTap;
@@ -637,8 +691,7 @@ class _InventoryGiftCard extends StatelessWidget {
             children: [
               // Quantity badge
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color: _kEmerald.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
@@ -674,8 +727,10 @@ class _InventoryGiftCard extends StatelessWidget {
               const SizedBox(height: 4),
               // Send button
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [_kDeepPlum, _kWarmRose],
@@ -685,8 +740,11 @@ class _InventoryGiftCard extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.send_rounded,
-                        size: 10, color: Colors.white),
+                    const Icon(
+                      Icons.send_rounded,
+                      size: 10,
+                      color: Colors.white,
+                    ),
                     const SizedBox(width: 3),
                     Text(
                       'Send',
@@ -749,8 +807,10 @@ class _ClaimGiftCard extends StatelessWidget {
               const SizedBox(height: 6),
               if (ownedQty > 0)
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: _kEmerald.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
@@ -787,8 +847,7 @@ class _ClaimGiftCard extends StatelessWidget {
               const SizedBox(height: 4),
               // Watch Ad button
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [_kDeepPlum, _kWarmRose],
@@ -798,8 +857,11 @@ class _ClaimGiftCard extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.play_arrow_rounded,
-                        size: 12, color: Colors.white),
+                    const Icon(
+                      Icons.play_arrow_rounded,
+                      size: 12,
+                      color: Colors.white,
+                    ),
                     const SizedBox(width: 2),
                     Text(
                       'Watch Ad',

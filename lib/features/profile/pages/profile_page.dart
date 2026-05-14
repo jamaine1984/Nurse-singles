@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -8,6 +9,7 @@ import 'package:nightingale_heart/core/config/app_theme.dart';
 import 'package:nightingale_heart/core/models/user_model.dart';
 import 'package:nightingale_heart/core/providers/app_providers.dart';
 import 'package:nightingale_heart/core/services/admob_service.dart';
+import 'package:nightingale_heart/core/services/web_rewarded_ad_service.dart';
 import 'package:nightingale_heart/core/widgets/app_network_image.dart';
 import 'package:nightingale_heart/core/widgets/glass_card.dart';
 import 'package:go_router/go_router.dart';
@@ -42,6 +44,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   String _planLabel(SubscriptionPlan plan) => _t('plan_${plan.value}');
 
   String _lookingForLabel(LookingFor value) => _t('looking_${value.value}');
+
+  String _rewardedAdUnavailableMessage() {
+    if (kIsWeb) {
+      final reason = WebRewardedAdService.instance.unavailableReason;
+      if (reason.isNotEmpty) return reason;
+    }
+    return _t('ad_not_available_retry');
+  }
 
   String _healthcareBadgeLabel(UserModel user) {
     final rawBadge = user.healthcareVerificationBadge?.trim();
@@ -639,7 +649,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                _t('ad_not_available_retry'),
+                _rewardedAdUnavailableMessage(),
                 style: GoogleFonts.plusJakartaSans(),
               ),
               behavior: SnackBarBehavior.floating,
@@ -685,7 +695,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              _t('could_not_show_ad'),
+              _rewardedAdUnavailableMessage(),
               style: GoogleFonts.plusJakartaSans(),
             ),
             behavior: SnackBarBehavior.floating,

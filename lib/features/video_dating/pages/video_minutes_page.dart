@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +11,7 @@ import 'package:nightingale_heart/core/config/app_theme.dart';
 import 'package:nightingale_heart/core/providers/app_providers.dart';
 import 'package:nightingale_heart/core/services/admob_service.dart';
 import 'package:nightingale_heart/core/services/payment_service.dart';
+import 'package:nightingale_heart/core/services/web_rewarded_ad_service.dart';
 import 'package:nightingale_heart/core/widgets/glass_card.dart';
 import 'package:nightingale_heart/features/video_dating/services/video_service.dart';
 import 'package:nightingale_heart/l10n/app_localizations.dart';
@@ -68,6 +70,14 @@ class _VideoMinutesPageState extends ConsumerState<VideoMinutesPage> {
     return AppLocalizations.format(key, ref.read(localeProvider), values);
   }
 
+  String _rewardedAdUnavailableMessage() {
+    if (kIsWeb) {
+      final reason = WebRewardedAdService.instance.unavailableReason;
+      if (reason.isNotEmpty) return reason;
+    }
+    return _t('ad_not_available_retry');
+  }
+
   // ---- Actions -----------------------------------------------------------
 
   Future<void> _watchAd() async {
@@ -83,9 +93,9 @@ class _VideoMinutesPageState extends ConsumerState<VideoMinutesPage> {
       setState(() => _adLoading = false);
 
       if (!admob.isRewardedAdReady) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(_t('ad_not_available_retry'))));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_rewardedAdUnavailableMessage())),
+        );
         return;
       }
     }
@@ -102,6 +112,10 @@ class _VideoMinutesPageState extends ConsumerState<VideoMinutesPage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(message)));
+    } else if (mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_rewardedAdUnavailableMessage())));
     }
   }
 
