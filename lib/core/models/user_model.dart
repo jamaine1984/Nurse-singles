@@ -76,6 +76,7 @@ class UserModel {
     this.jobTitle,
     this.hospital,
     this.department,
+    this.showProfessionBadge = true,
     this.hideWorkplace = false,
     this.avoidSameWorkplace = false,
     this.avoidSameDepartment = false,
@@ -123,6 +124,7 @@ class UserModel {
   final String? jobTitle;
   final String? hospital;
   final String? department;
+  final bool showProfessionBadge;
   final bool hideWorkplace;
   final bool avoidSameWorkplace;
   final bool avoidSameDepartment;
@@ -174,6 +176,7 @@ class UserModel {
       jobTitle: data['jobTitle'] as String?,
       hospital: data['hospital'] as String?,
       department: data['department'] as String?,
+      showProfessionBadge: data['showProfessionBadge'] as bool? ?? true,
       hideWorkplace: data['hideWorkplace'] as bool? ?? false,
       avoidSameWorkplace: data['avoidSameWorkplace'] as bool? ?? false,
       avoidSameDepartment: data['avoidSameDepartment'] as bool? ?? false,
@@ -240,6 +243,7 @@ class UserModel {
       jobTitle: data['jobTitle'] as String?,
       hospital: data['hospital'] as String?,
       department: data['department'] as String?,
+      showProfessionBadge: data['showProfessionBadge'] as bool? ?? true,
       hideWorkplace: data['hideWorkplace'] as bool? ?? false,
       avoidSameWorkplace: data['avoidSameWorkplace'] as bool? ?? false,
       avoidSameDepartment: data['avoidSameDepartment'] as bool? ?? false,
@@ -304,6 +308,7 @@ class UserModel {
     'jobTitle': jobTitle,
     'hospital': hospital,
     'department': department,
+    'showProfessionBadge': showProfessionBadge,
     'hideWorkplace': hideWorkplace,
     'avoidSameWorkplace': avoidSameWorkplace,
     'avoidSameDepartment': avoidSameDepartment,
@@ -359,6 +364,7 @@ class UserModel {
     String? jobTitle,
     String? hospital,
     String? department,
+    bool? showProfessionBadge,
     bool? hideWorkplace,
     bool? avoidSameWorkplace,
     bool? avoidSameDepartment,
@@ -406,6 +412,7 @@ class UserModel {
       jobTitle: jobTitle ?? this.jobTitle,
       hospital: hospital ?? this.hospital,
       department: department ?? this.department,
+      showProfessionBadge: showProfessionBadge ?? this.showProfessionBadge,
       hideWorkplace: hideWorkplace ?? this.hideWorkplace,
       avoidSameWorkplace: avoidSameWorkplace ?? this.avoidSameWorkplace,
       avoidSameDepartment: avoidSameDepartment ?? this.avoidSameDepartment,
@@ -478,11 +485,17 @@ class UserModel {
         'Healthcare Worker Verified';
   }
 
-  String get careRoleBadge {
+  String? get publicProfessionBadge {
+    if (!showProfessionBadge) return null;
     final job = jobTitle?.trim();
     if (job != null && job.isNotEmpty) return job;
     return healthcareCredentialType?.displayName ?? 'Healthcare Worker';
   }
+
+  String get careRoleBadge =>
+      publicProfessionBadge ??
+      healthcareCredentialType?.displayName ??
+      'Healthcare Professional';
 
   bool get hasPartnerCode =>
       partnerCode != null && partnerCode!.trim().isNotEmpty;

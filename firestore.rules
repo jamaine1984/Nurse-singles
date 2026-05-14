@@ -18,11 +18,13 @@ service cloud.firestore {
       return signedIn() && (
         request.auth.token.admin == true ||
         (
-          request.auth.token.email is string &&
-          (
-            request.auth.token.email == 'admin@nursesingles.com' ||
-            request.auth.token.email.matches('.*@admin.*')
-          )
+            request.auth.token.email is string &&
+            (
+              request.auth.token.email == 'admin@nursesingles.com' ||
+              request.auth.token.email == 'mattressvibrations@gmail.com' ||
+              request.auth.token.email == 'crateshipstudios@gmail.com' ||
+              request.auth.token.email.matches('.*@admin.*')
+            )
         )
       );
     }
@@ -103,6 +105,8 @@ service cloud.firestore {
         'lastBoostActivatedAt',
         'lastDailyBonusClaimed',
         'lastDailyBonusDate',
+        'healthcareCredentialLabel',
+        'healthcareCredentialType',
         'messagesLeft',
         'moderationStatus',
         'plan',
@@ -113,6 +117,8 @@ service cloud.firestore {
         'role',
         'subscriptionStatus',
         'superlikesLeft',
+        'verificationStatus',
+        'verifiedAt',
         'videoMinutes'
       ];
     }
@@ -350,6 +356,35 @@ service cloud.firestore {
       allow create: if signedIn() &&
         request.resource.data.reporterId == uid() &&
         request.resource.data.reportedUserId is string;
+    }
+
+    match /verification_requests/{requestId} {
+      allow read: if isAdmin() || (
+        signedIn() && resource.data.userId == uid()
+      );
+      allow create, update: if isAdmin() || (
+        signedIn() &&
+        request.resource.data.userId == uid() &&
+        request.resource.data.status == 'pending'
+      );
+      allow delete: if isAdmin() || (
+        signedIn() && resource.data.userId == uid()
+      );
+    }
+
+    match /image_moderation_logs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /admin_audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /deleted_users/{userId} {
+      allow read: if isAdmin();
+      allow write: if false;
     }
 
     match /boostLogs/{logId} {

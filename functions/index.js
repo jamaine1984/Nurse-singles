@@ -1,3 +1,4 @@
+const {setGlobalOptions} = require("firebase-functions/v2");
 const {onDocumentCreated} = require("firebase-functions/v2/firestore");
 const {onCall, HttpsError} = require("firebase-functions/v2/https");
 const {onSchedule} = require("firebase-functions/v2/scheduler");
@@ -17,6 +18,14 @@ const {
 
 admin.initializeApp();
 
+setGlobalOptions({
+  region: "us-central1",
+  minInstances: 0,
+  maxInstances: 10,
+  cpu: "gcf_gen1",
+  concurrency: 1,
+});
+
 const revenueCatApiKey = defineSecret("REVENUECAT_API_KEY");
 const visionAuth = new GoogleAuth({
   scopes: ["https://www.googleapis.com/auth/cloud-platform"],
@@ -28,6 +37,12 @@ const subscriptionProductIdsByPlan = {
   "nurse": "nurse_monthly",
   "doctor": "doctor_monthly",
 };
+
+const adminOwnerEmails = new Set([
+  "admin@nursesingles.com",
+  "mattressvibrations@gmail.com",
+  "crateshipstudios@gmail.com",
+]);
 
 const videoAdMinuteMilestones = {
   10: 1,
@@ -425,6 +440,145 @@ exports.sendTestNotification = onCall(async (request) => {
     throw new HttpsError("internal", error.message);
   }
 });
+
+exports.adminReviewVerification = onCall(
+    {enforceAppCheck: true},
+    async (request) => {
+      assertAdmin(request);
+
+      const requestId = requireString(request.data?.requestId, "requestId");
+      const decision = requireString(request.data?.decision, "decision");
+      if (!["approved", "rejected"].includes(decision)) {
+        throw new HttpsError("invalid-argument", "Unsupported decision");
+      }
+
+      const db = admin.firestore();
+      const requestRef = db.collection("verification_requests").doc(requestId);
+
+      await db.runTransaction(async (transaction) => {
+        const requestSnap = await transaction.get(requestRef);
+        if (!requestSnap.exists) {
+          throw new HttpsError("not-found", "Verification request not found");
+        }
+
+        const requestData = requestSnap.data() || {};
+        const userId = requireString(requestData.userId, "userId");
+        const credentialType = optionalString(request.data?.credentialType) ||
+          optionalString(requestData.credentialType) ||
+          "healthcareWorker";
+        const credentialTypeLabel =
+          optionalString(request.data?.credentialTypeLabel) ||
+          optionalString(requestData.credentialTypeLabel) ||
+          "Healthcare Worker Verified";
+        const userRef = db.collection("users").doc(userId);
+        const reviewFields = {
+          "status": decision === "approved" ? "verified" : "rejected",
+          "reviewedAt": admin.firestore.FieldValue.serverTimestamp(),
+          "reviewedBy": request.auth.uid,
+          "reviewedByEmail": request.auth.token.email || null,
+          "updatedAt": admin.firestore.FieldValue.serverTimestamp(),
+        };
+
+        transaction.set(requestRef, reviewFields, {merge: true});
+        if (decision === "approved") {
+          transaction.set(userRef, {
+            "isVerified": true,
+            "verificationStatus": "verified",
+            "healthcareCredentialType": credentialType,
+            "healthcareCredentialLabel": credentialTypeLabel,
+            "verifiedAt": admin.firestore.FieldValue.serverTimestamp(),
+            "updatedAt": admin.firestore.FieldValue.serverTimestamp(),
+          }, {merge: true});
+        } else {
+          transaction.set(userRef, {
+            "isVerified": false,
+            "verificationStatus": "rejected",
+            "updatedAt": admin.firestore.FieldValue.serverTimestamp(),
+          }, {merge: true});
+        }
+      });
+
+      return {success: true, decision};
+    },
+);
+
+exports.adminSetUserStatus = onCall(
+    {enforceAppCheck: true},
+    async (request) => {
+      assertAdmin(request);
+
+      const userId = requireString(request.data?.userId, "userId");
+      const status = requireString(request.data?.status, "status");
+      if (!["active", "suspended"].includes(status)) {
+        throw new HttpsError("invalid-argument", "Unsupported status");
+      }
+      const suspended = status === "suspended";
+      const db = admin.firestore();
+      await Promise.all([
+        admin.auth().updateUser(userId, {disabled: suspended}),
+        db.collection("users").doc(userId).set({
+          "isBanned": suspended,
+          "adminStatus": status,
+          "adminStatusUpdatedAt": admin.firestore.FieldValue.serverTimestamp(),
+          "adminStatusUpdatedBy": request.auth.uid,
+          "updatedAt": admin.firestore.FieldValue.serverTimestamp(),
+        }, {merge: true}),
+        db.collection("admin_audit_logs").add({
+          "action": suspended ? "suspend_user" : "restore_user",
+          "targetUserId": userId,
+          "adminUserId": request.auth.uid,
+          "adminEmail": request.auth.token.email || null,
+          "createdAt": admin.firestore.FieldValue.serverTimestamp(),
+        }),
+      ]);
+
+      return {success: true, status};
+    },
+);
+
+exports.adminDeleteUser = onCall(
+    {enforceAppCheck: true},
+    async (request) => {
+      assertAdmin(request);
+
+      const userId = requireString(request.data?.userId, "userId");
+      if (userId === request.auth.uid) {
+        throw new HttpsError(
+            "failed-precondition",
+            "Admins cannot delete their own account from this panel",
+        );
+      }
+
+      const db = admin.firestore();
+      const userRef = db.collection("users").doc(userId);
+      const userSnap = await userRef.get();
+      await db.collection("deleted_users").doc(userId).set({
+        "userId": userId,
+        "snapshot": userSnap.exists ? userSnap.data() : null,
+        "deletedBy": request.auth.uid,
+        "deletedByEmail": request.auth.token.email || null,
+        "deletedAt": admin.firestore.FieldValue.serverTimestamp(),
+      }, {merge: true});
+
+      try {
+        await admin.auth().deleteUser(userId);
+      } catch (error) {
+        if (error.code !== "auth/user-not-found") {
+          throw error;
+        }
+      }
+      await userRef.delete();
+      await db.collection("admin_audit_logs").add({
+        "action": "delete_user",
+        "targetUserId": userId,
+        "adminUserId": request.auth.uid,
+        "adminEmail": request.auth.token.email || null,
+        "createdAt": admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      return {success: true};
+    },
+);
 
 exports.completeZegoCallSession = onCall(
     {enforceAppCheck: true},
@@ -1889,6 +2043,25 @@ exports.cleanupStaleOperationalData = onSchedule(
       return cleanup;
     },
 );
+
+/**
+ * Requires a signed-in admin or owner email for privileged callable actions.
+ * @param {CallableRequest} request Firebase callable request.
+ * @return {void}
+ */
+function assertAdmin(request) {
+  const token = request.auth?.token || {};
+  const email = typeof token.email === "string" ?
+    token.email.toLowerCase() :
+    "";
+  const isOwnerEmail = adminOwnerEmails.has(email) || email.includes("@admin");
+  if (!request.auth || !(token.admin === true || isOwnerEmail)) {
+    throw new HttpsError(
+        "permission-denied",
+        "Admin access is required for this action",
+    );
+  }
+}
 
 /**
  * Reads a required string field from callable data.

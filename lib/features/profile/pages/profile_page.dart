@@ -336,6 +336,45 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             ),
           ),
         ],
+        if (user.publicProfessionBadge != null) ...[
+          const SizedBox(height: 8),
+          Container(
+            constraints: const BoxConstraints(maxWidth: 260),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFF155E75).withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: const Color(0xFF155E75).withValues(alpha: 0.25),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.badge_rounded,
+                  color: Color(0xFF155E75),
+                  size: 15,
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    user.publicProfessionBadge!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF155E75),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         if (user.healthcareVerificationBadge != null) ...[
           const SizedBox(height: 8),
           Container(

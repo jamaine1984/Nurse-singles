@@ -42,6 +42,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
   // ── Step 2 fields ──
   String? _selectedJobTitle;
+  bool _showProfessionBadge = true;
   final _workplaceController = TextEditingController();
   String? _selectedDepartment;
   double _yearsExperience = 0;
@@ -560,6 +561,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         'gender': _genderToValue(_selectedGender),
         'lookingFor': _lookingForToValue(_selectedLookingFor),
         'jobTitle': _selectedJobTitle,
+        'showProfessionBadge': _showProfessionBadge,
         'hospital': _workplaceController.text.trim().isEmpty
             ? null
             : _workplaceController.text.trim(),
@@ -966,6 +968,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             icon: Icons.medical_services_outlined,
             onChanged: (val) => setState(() => _selectedJobTitle = val),
           ),
+          const SizedBox(height: 12),
+          _buildProfessionBadgeOptIn(),
           const SizedBox(height: 16),
 
           // Workplace
@@ -1037,6 +1041,88 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     fontSize: 11,
     color: Colors.white.withValues(alpha: 0.4),
   );
+
+  Widget _buildProfessionBadgeOptIn() {
+    final preview = _selectedJobTitle ?? 'Your profession';
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SwitchListTile.adaptive(
+            value: _showProfessionBadge,
+            onChanged: (value) => setState(() => _showProfessionBadge = value),
+            contentPadding: EdgeInsets.zero,
+            activeColor: AppTheme.deepPlum,
+            secondary: const Icon(
+              Icons.badge_outlined,
+              color: Color(0xFF67E8F9),
+            ),
+            title: Text(
+              'Show profession badge',
+              style: GoogleFonts.plusJakartaSans(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            subtitle: Text(
+              'Display a public badge like "$preview" on your swipe card and profile.',
+              style: GoogleFonts.plusJakartaSans(
+                color: Colors.white.withValues(alpha: 0.65),
+                fontSize: 12,
+                height: 1.3,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          AnimatedOpacity(
+            opacity: _showProfessionBadge ? 1 : 0.55,
+            duration: const Duration(milliseconds: 180),
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 260),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              decoration: BoxDecoration(
+                color: const Color(0xFF155E75).withValues(alpha: 0.85),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFF67E8F9).withValues(alpha: 0.35),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.badge_rounded,
+                    color: Color(0xFF67E8F9),
+                    size: 15,
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      _showProfessionBadge ? preview : 'Badge hidden',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // STEP 3: Schedule

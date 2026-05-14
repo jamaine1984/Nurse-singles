@@ -10,6 +10,21 @@ service firebase.storage {
       return request.auth.uid;
     }
 
+    function isAdmin() {
+      return signedIn() && (
+        request.auth.token.admin == true ||
+        (
+          request.auth.token.email is string &&
+          (
+            request.auth.token.email == 'admin@nursesingles.com' ||
+            request.auth.token.email == 'mattressvibrations@gmail.com' ||
+            request.auth.token.email == 'crateshipstudios@gmail.com' ||
+            request.auth.token.email.matches('.*@admin.*')
+          )
+        )
+      );
+    }
+
     function isImage() {
       return request.resource != null &&
         request.resource.contentType.matches('image/.*');
@@ -68,12 +83,21 @@ service firebase.storage {
     }
 
     match /verification/{userId}/{fileName} {
-      allow read: if signedIn() && uid() == userId;
+      allow read: if (signedIn() && uid() == userId) || isAdmin();
       allow create, update: if signedIn() &&
         uid() == userId &&
         under(10) &&
         isImage();
-      allow delete: if signedIn() && uid() == userId;
+      allow delete: if (signedIn() && uid() == userId) || isAdmin();
+    }
+
+    match /credential_verification/{userId}/{fileName} {
+      allow read: if (signedIn() && uid() == userId) || isAdmin();
+      allow create, update: if signedIn() &&
+        uid() == userId &&
+        under(10) &&
+        isImage();
+      allow delete: if (signedIn() && uid() == userId) || isAdmin();
     }
 
     match /{path=**} {

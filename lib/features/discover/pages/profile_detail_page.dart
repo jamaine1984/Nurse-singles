@@ -371,6 +371,7 @@ class _ProfileDetailPageState extends ConsumerState<ProfileDetailPage> {
             locale,
             fallback: user.healthcareVerificationBadge,
           );
+          final professionBadge = user.publicProfessionBadge;
 
           return Stack(
             children: [
@@ -438,61 +439,37 @@ class _ProfileDetailPageState extends ConsumerState<ProfileDetailPage> {
                     padding: const EdgeInsets.fromLTRB(24, 0, 24, 120),
                     sliver: SliverList(
                       delegate: SliverChildListDelegate([
-                        // Name, age, verified
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                '${user.name}${user.age != null ? ', ${user.age}' : ''}',
-                                style: GoogleFonts.playfairDisplay(
-                                  fontSize: 30,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                            if (user.isVerified)
-                              Container(
-                                constraints: const BoxConstraints(
-                                  maxWidth: 178,
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.softAmber.withValues(
-                                    alpha: 0.15,
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.verified,
-                                      color: AppTheme.softAmber,
-                                      size: 16,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Flexible(
-                                      child: Text(
-                                        verificationBadge,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: GoogleFonts.plusJakartaSans(
-                                          fontSize: 11.5,
-                                          fontWeight: FontWeight.w700,
-                                          color: AppTheme.softAmber,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                          ],
+                        Text(
+                          '${user.name}${user.age != null ? ', ${user.age}' : ''}',
+                          style: GoogleFonts.playfairDisplay(
+                            fontSize: 30,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.1),
 
                         const SizedBox(height: 8),
+
+                        if (professionBadge != null || user.isVerified) ...[
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              if (professionBadge != null)
+                                _ProfileBadgePill(
+                                  icon: Icons.badge_rounded,
+                                  label: professionBadge,
+                                  color: const Color(0xFF155E75),
+                                ),
+                              if (user.isVerified)
+                                _ProfileBadgePill(
+                                  icon: Icons.verified_rounded,
+                                  label: verificationBadge,
+                                  color: AppTheme.softAmber,
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                        ],
 
                         // Job title, privacy-safe workplace, department
                         if (_clinicalSummary(user) != null)
@@ -1175,6 +1152,50 @@ class _SectionTitle extends StatelessWidget {
       style: GoogleFonts.playfairDisplay(
         fontSize: 20,
         fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+}
+
+class _ProfileBadgePill extends StatelessWidget {
+  const _ProfileBadgePill({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 220),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.13),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.32)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 15),
+          const SizedBox(width: 5),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w800,
+                color: color,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

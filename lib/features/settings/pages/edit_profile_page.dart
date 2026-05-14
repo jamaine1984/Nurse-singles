@@ -44,6 +44,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   File? _newProfileImage;
   bool _isSaving = false;
   bool _hasUnsavedChanges = false;
+  bool _showProfessionBadge = true;
   bool _hideWorkplace = false;
   bool _avoidSameWorkplace = false;
   bool _avoidSameDepartment = false;
@@ -203,6 +204,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       _selectedLanguages = List<String>.from(user.languages);
       _gallery = List<String>.from(user.gallery);
       _photoUrl = user.photoUrl;
+      _showProfessionBadge = user.showProfessionBadge;
       _hideWorkplace = user.hideWorkplace;
       _avoidSameWorkplace = user.avoidSameWorkplace;
       _avoidSameDepartment = user.avoidSameDepartment;
@@ -304,6 +306,8 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                 ),
                 const SizedBox(height: 16),
                 _buildWorkplacePrivacySection(theme),
+                const SizedBox(height: 16),
+                _buildProfessionBadgeSection(theme),
                 const SizedBox(height: 16),
                 _buildExperienceSlider(theme),
                 const SizedBox(height: 16),
@@ -665,6 +669,100 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
               setState(() => _avoidSameDepartment = value);
               _markChanged();
             },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfessionBadgeSection(ThemeData theme) {
+    final preview = _selectedJobTitle?.trim().isNotEmpty == true
+        ? _selectedJobTitle!.trim()
+        : 'Healthcare Professional';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.7),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SwitchListTile.adaptive(
+            value: _showProfessionBadge,
+            onChanged: (value) {
+              setState(() => _showProfessionBadge = value);
+              _markChanged();
+            },
+            activeColor: AppTheme.emerald,
+            contentPadding: EdgeInsets.zero,
+            secondary: const Icon(
+              Icons.badge_outlined,
+              color: AppTheme.emerald,
+            ),
+            title: Text(
+              'Show profession badge',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            subtitle: Text(
+              'When enabled, your swipe card and profile show "$preview" as a public healthcare role badge.',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 11.5,
+                height: 1.3,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            constraints: const BoxConstraints(maxWidth: 280),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+            decoration: BoxDecoration(
+              color: (_showProfessionBadge ? AppTheme.emerald : Colors.grey)
+                  .withValues(alpha: 0.13),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: (_showProfessionBadge ? AppTheme.emerald : Colors.grey)
+                    .withValues(alpha: 0.35),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  _showProfessionBadge
+                      ? Icons.badge_rounded
+                      : Icons.visibility_off_outlined,
+                  color: _showProfessionBadge
+                      ? AppTheme.emerald
+                      : theme.colorScheme.onSurfaceVariant,
+                  size: 16,
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    _showProfessionBadge ? preview : 'Profession badge hidden',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: _showProfessionBadge
+                          ? AppTheme.emerald
+                          : theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -1265,6 +1363,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         'location': _locationController.text.trim(),
         'jobTitle': _selectedJobTitle,
         'department': _selectedDepartment,
+        'showProfessionBadge': _showProfessionBadge,
         'hideWorkplace': _hideWorkplace,
         'avoidSameWorkplace': _avoidSameWorkplace,
         'avoidSameDepartment': _avoidSameDepartment,

@@ -46,6 +46,7 @@ class ProfileCard extends StatelessWidget {
         ? null
         : user.workplaceDisplayLabel;
     final isWorkplacePrivate = user.hideWorkplace && user.hasWorkplace;
+    final professionBadge = user.publicProfessionBadge;
     final careFit = _careFit;
     final compatibilityPercent =
         careFit?.totalScore ?? _fallbackCompatibilityPercent;
@@ -175,12 +176,14 @@ class ProfileCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _StatusPill(
-                      icon: Icons.badge_rounded,
-                      label: user.careRoleBadge,
-                      color: const Color(0xFF67E8F9),
-                    ),
-                    if (user.isOnline || user.isVerified)
+                    if (professionBadge != null)
+                      _StatusPill(
+                        icon: Icons.badge_rounded,
+                        label: professionBadge,
+                        color: const Color(0xFF67E8F9),
+                      ),
+                    if (professionBadge != null &&
+                        (user.isOnline || user.isVerified))
                       const SizedBox(height: 6),
                     if (user.isOnline)
                       _StatusPill(

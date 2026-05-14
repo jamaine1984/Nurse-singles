@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:nightingale_heart/core/config/app_constants.dart';
 import 'package:nightingale_heart/core/config/app_theme.dart';
@@ -12,7 +13,11 @@ import 'package:nightingale_heart/core/widgets/glass_card.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 /// Admin emails that can access the admin panel.
-const _adminEmails = <String>['admin@nursesingles.com'];
+const _adminEmails = <String>[
+  'admin@nursesingles.com',
+  'mattressvibrations@gmail.com',
+  'crateshipstudios@gmail.com',
+];
 
 /// Returns true if the given email belongs to an admin.
 bool _isAdmin(String? email) {
@@ -441,29 +446,14 @@ class _VerificationCard extends StatelessWidget {
 
   Future<void> _approve(BuildContext context) async {
     try {
-      final firestore = FirebaseFirestore.instance;
-      final batch = firestore.batch();
-      batch.update(
-        firestore
-            .collection(AppConstants.verificationRequestsCollection)
-            .doc(requestId),
-        {
-          'status': 'verified',
-          'reviewedAt': FieldValue.serverTimestamp(),
-          'updatedAt': FieldValue.serverTimestamp(),
-        },
-      );
-      batch.update(
-        firestore.collection(AppConstants.usersCollection).doc(userId),
-        {
-          'isVerified': true,
-          'healthcareCredentialType': credentialType,
-          'healthcareCredentialLabel': credentialTypeLabel,
-          'verifiedAt': FieldValue.serverTimestamp(),
-          'updatedAt': FieldValue.serverTimestamp(),
-        },
-      );
-      await batch.commit();
+      await FirebaseFunctions.instance
+          .httpsCallable('adminReviewVerification')
+          .call({
+            'requestId': requestId,
+            'decision': 'approved',
+            'credentialType': credentialType,
+            'credentialTypeLabel': credentialTypeLabel,
+          });
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -520,23 +510,9 @@ class _VerificationCard extends StatelessWidget {
     if (confirmed != true || !context.mounted) return;
 
     try {
-      final firestore = FirebaseFirestore.instance;
-      final batch = firestore.batch();
-      batch.update(
-        firestore
-            .collection(AppConstants.verificationRequestsCollection)
-            .doc(requestId),
-        {
-          'status': 'rejected',
-          'reviewedAt': FieldValue.serverTimestamp(),
-          'updatedAt': FieldValue.serverTimestamp(),
-        },
-      );
-      batch.update(
-        firestore.collection(AppConstants.usersCollection).doc(userId),
-        {'isVerified': false, 'updatedAt': FieldValue.serverTimestamp()},
-      );
-      await batch.commit();
+      await FirebaseFunctions.instance
+          .httpsCallable('adminReviewVerification')
+          .call({'requestId': requestId, 'decision': 'rejected'});
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1236,6 +1212,93 @@ class _UsersTabState extends State<_UsersTab> {
     }
   }
 
+  Future<void> _setUserSuspended({
+    required String userId,
+    required bool suspended,
+  }) async {
+    try {
+      await FirebaseFunctions.instance.httpsCallable('adminSetUserStatus').call(
+        {'userId': userId, 'status': suspended ? 'suspended' : 'active'},
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            suspended ? 'User suspended.' : 'User restored.',
+            style: GoogleFonts.plusJakartaSans(),
+          ),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: suspended ? AppTheme.warmRose : AppTheme.emerald,
+        ),
+      );
+      await _searchUsers(widget.searchController.text);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Admin action failed: $e'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _deleteUser(String userId, String name) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(
+          'Delete User?',
+          style: GoogleFonts.playfairDisplay(fontWeight: FontWeight.w600),
+        ),
+        content: Text(
+          'Delete $name from Auth and Firestore? This is permanent.',
+          style: GoogleFonts.plusJakartaSans(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await FirebaseFunctions.instance.httpsCallable('adminDeleteUser').call({
+        'userId': userId,
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$name deleted.', style: GoogleFonts.plusJakartaSans()),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red,
+        ),
+      );
+      await _searchUsers(widget.searchController.text);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Delete failed: $e'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -1309,6 +1372,7 @@ class _UsersTabState extends State<_UsersTab> {
                     );
                     final isVerified = data['isVerified'] as bool? ?? false;
                     final isOnline = data['isOnline'] as bool? ?? false;
+                    final isBanned = data['isBanned'] as bool? ?? false;
 
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 8),
@@ -1389,35 +1453,104 @@ class _UsersTabState extends State<_UsersTab> {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   const SizedBox(height: 2),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.deepPlum.withValues(
-                                        alpha: 0.1,
+                                  Wrap(
+                                    spacing: 6,
+                                    runSpacing: 4,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.deepPlum.withValues(
+                                            alpha: 0.1,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          plan.displayName,
+                                          style: GoogleFonts.plusJakartaSans(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppTheme.deepPlum,
+                                          ),
+                                        ),
                                       ),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Text(
-                                      plan.displayName,
-                                      style: GoogleFonts.plusJakartaSans(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppTheme.deepPlum,
-                                      ),
-                                    ),
+                                      if (isBanned)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 2,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.warmRose.withValues(
+                                              alpha: 0.12,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            'Suspended',
+                                            style: GoogleFonts.plusJakartaSans(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w700,
+                                              color: AppTheme.warmRose,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
                                   ),
                                 ],
                               ),
                             ),
-                            Text(
-                              doc.id.substring(0, 8),
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 10,
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  doc.id.substring(0, 8),
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 10,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                                PopupMenuButton<String>(
+                                  tooltip: 'User actions',
+                                  onSelected: (value) {
+                                    if (value == 'suspend') {
+                                      _setUserSuspended(
+                                        userId: doc.id,
+                                        suspended: true,
+                                      );
+                                    } else if (value == 'restore') {
+                                      _setUserSuspended(
+                                        userId: doc.id,
+                                        suspended: false,
+                                      );
+                                    } else if (value == 'delete') {
+                                      _deleteUser(doc.id, name);
+                                    }
+                                  },
+                                  itemBuilder: (context) => [
+                                    PopupMenuItem(
+                                      value: isBanned ? 'restore' : 'suspend',
+                                      child: Text(
+                                        isBanned
+                                            ? 'Restore user'
+                                            : 'Suspend user',
+                                      ),
+                                    ),
+                                    const PopupMenuItem(
+                                      value: 'delete',
+                                      child: Text('Delete user'),
+                                    ),
+                                  ],
+                                  icon: const Icon(Icons.more_vert, size: 20),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -1434,7 +1567,7 @@ class _UsersTabState extends State<_UsersTab> {
   }
 }
 
-// ─── Announcements Tab ─────────────────────────────────────────────────────────
+// Announcements Tab
 
 class _AnnouncementsTab extends StatefulWidget {
   const _AnnouncementsTab({
