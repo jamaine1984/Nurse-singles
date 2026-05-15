@@ -22,6 +22,7 @@
   <meta name="description" content="Nurse Singles International is a dating and community app for healthcare professionals, nursing students, travel clinicians, and healthcare staff.">
   <meta name="application-name" content="Nurse Singles">
   <meta name="theme-color" content="#0F766E">
+  <meta name="format-detection" content="telephone=no">
   <link rel="canonical" href="https://nurse-singles.com/">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Nurse Singles International">
@@ -32,9 +33,13 @@
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="Nurse Singles">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="apple-touch-icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="167x167" href="apple-touch-icon-167x167.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
@@ -115,6 +120,77 @@
       height: 34px;
       justify-content: center;
       width: 34px;
+    }
+
+    #ios-install-sheet {
+      align-items: flex-end;
+      background: rgba(2, 6, 23, 0.54);
+      display: none;
+      inset: 0;
+      justify-content: center;
+      padding: 18px;
+      position: fixed;
+      z-index: 2147483646;
+    }
+
+    #ios-install-sheet.is-visible {
+      display: flex;
+    }
+
+    #ios-install-card {
+      background: #f8fafc;
+      border: 1px solid rgba(15, 118, 110, 0.18);
+      border-radius: 24px;
+      box-shadow: 0 24px 70px rgba(2, 6, 23, 0.32);
+      box-sizing: border-box;
+      color: #0f172a;
+      max-width: 440px;
+      padding: 20px;
+      width: 100%;
+    }
+
+    #ios-install-card h2 {
+      font: 800 20px/1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+      margin: 0 0 6px;
+    }
+
+    #ios-install-card p,
+    #ios-install-card li {
+      color: #475569;
+      font: 600 14px/1.45 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+
+    #ios-install-card p {
+      margin: 0 0 14px;
+    }
+
+    #ios-install-card ol {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    #ios-install-card li + li {
+      margin-top: 8px;
+    }
+
+    #ios-install-card b {
+      color: #0f766e;
+    }
+
+    #ios-install-done {
+      appearance: none;
+      background: #0f766e;
+      border: 0;
+      border-radius: 999px;
+      color: #ffffff;
+      cursor: pointer;
+      font: 800 14px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+      margin-top: 18px;
+      min-height: 44px;
+      width: 100%;
     }
 
     @media (max-width: 420px) {
@@ -305,12 +381,29 @@
     <button id="pwa-install-action" type="button">Install</button>
     <button id="pwa-install-close" type="button" aria-label="Dismiss install prompt">&times;</button>
   </div>
+  <div id="ios-install-sheet" hidden>
+    <div id="ios-install-card" role="dialog" aria-modal="true" aria-labelledby="ios-install-title">
+      <h2 id="ios-install-title">Install Nurse Singles on iPhone</h2>
+      <p id="ios-install-intro">iPhone installs web apps from Safari using the Share menu.</p>
+      <ol>
+        <li id="ios-install-step-browser">Open <b>nurse-singles.com</b> in Safari.</li>
+        <li>Tap the <b>Share</b> button.</li>
+        <li>Choose <b>Add to Home Screen</b>. If you do not see it, scroll down and tap <b>Edit Actions</b>.</li>
+        <li>Turn on <b>Open as Web App</b>, then tap <b>Add</b>.</li>
+      </ol>
+      <button id="ios-install-done" type="button">Done</button>
+    </div>
+  </div>
   <script>
     (function () {
       var banner = document.getElementById('pwa-install-banner');
       var action = document.getElementById('pwa-install-action');
       var close = document.getElementById('pwa-install-close');
       var detail = document.getElementById('pwa-install-detail');
+      var iosSheet = document.getElementById('ios-install-sheet');
+      var iosDone = document.getElementById('ios-install-done');
+      var iosIntro = document.getElementById('ios-install-intro');
+      var iosBrowserStep = document.getElementById('ios-install-step-browser');
       var deferredPrompt = null;
       var dismissed = false;
 
@@ -322,6 +415,38 @@
         return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
       }
 
+      function isSafari() {
+        var ua = window.navigator.userAgent;
+        return /^((?!chrome|android|crios|fxios|edgios).)*safari/i.test(ua);
+      }
+
+      function showIOSInstructions() {
+        if (!iosSheet) {
+          return;
+        }
+        var safari = isSafari();
+        if (iosIntro) {
+          iosIntro.textContent = safari
+            ? 'iPhone installs web apps from Safari using the Share menu.'
+            : 'On iPhone, open this site in Safari first. Other iPhone browsers cannot show the full install flow.';
+        }
+        if (iosBrowserStep) {
+          iosBrowserStep.innerHTML = safari
+            ? 'Stay on <b>nurse-singles.com</b> in Safari.'
+            : 'Open <b>nurse-singles.com</b> in Safari.';
+        }
+        iosSheet.hidden = false;
+        iosSheet.classList.add('is-visible');
+      }
+
+      function hideIOSInstructions() {
+        if (!iosSheet) {
+          return;
+        }
+        iosSheet.classList.remove('is-visible');
+        iosSheet.hidden = true;
+      }
+
       function showBanner() {
         if (dismissed || isStandalone()) {
           return;
@@ -329,8 +454,10 @@
         banner.hidden = false;
         banner.classList.add('is-visible');
         if (!deferredPrompt && isiOS()) {
-          action.textContent = 'How';
-          detail.textContent = 'On iPhone: Share, then Add to Home Screen.';
+          action.textContent = 'Steps';
+          detail.textContent = isSafari()
+            ? 'On iPhone: Share, Add to Home Screen, then Open as Web App.'
+            : 'Open this site in Safari, then add it to your Home Screen.';
         } else if (!deferredPrompt) {
           action.textContent = 'Open';
           detail.textContent = 'Use your browser menu, then choose Install app or Add to home screen.';
@@ -357,6 +484,10 @@
       });
 
       action.addEventListener('click', function () {
+        if (!deferredPrompt && isiOS()) {
+          showIOSInstructions();
+          return;
+        }
         if (deferredPrompt) {
           deferredPrompt.prompt();
           deferredPrompt.userChoice.finally(function () {
@@ -366,6 +497,18 @@
         }
         showBanner();
       });
+
+      if (iosDone) {
+        iosDone.addEventListener('click', hideIOSInstructions);
+      }
+
+      if (iosSheet) {
+        iosSheet.addEventListener('click', function (event) {
+          if (event.target === iosSheet) {
+            hideIOSInstructions();
+          }
+        });
+      }
 
       close.addEventListener('click', function () {
         dismissed = true;
