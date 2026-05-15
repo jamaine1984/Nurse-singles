@@ -40,6 +40,9 @@ $zegoAppId = First-Value $values @('ZEGO_APP_ID', 'ZEGOCLOUD_APP_ID')
 $zegoAppSign = First-Value $values @('ZEGO_APP_SIGN', 'ZEGOCLOUD_APP_SIGN')
 $environment = First-Value $values @('ENVIRONMENT')
 $adsensePublisherId = First-Value $values @('ADSENSE_PUBLISHER_ID')
+if (!$adsensePublisherId) {
+  $adsensePublisherId = 'ca-pub-7587025688858323'
+}
 $gamRewardedAdUnitPath = First-Value $values @(
   'GAM_REWARDED_AD_UNIT_PATH',
   'GOOGLE_AD_MANAGER_REWARDED_AD_UNIT_PATH'
