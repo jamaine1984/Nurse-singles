@@ -8,6 +8,7 @@ import 'package:nightingale_heart/core/providers/app_providers.dart';
 import 'package:nightingale_heart/core/services/auth_service.dart';
 import 'package:nightingale_heart/core/widgets/animated_gradient_bg.dart';
 import 'package:nightingale_heart/core/widgets/glass_card.dart';
+import 'package:nightingale_heart/features/auth/widgets/mobile_access_note.dart';
 import 'package:nightingale_heart/l10n/app_localizations.dart';
 
 /// Login page with animated clinical background, glass card form, and full form validation.
@@ -46,18 +47,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       );
 
       if (!mounted) return;
-
-      // Check if user profile is complete
-      final user = authService.currentUser;
-      if (user != null) {
-        final profile = await authService.getUserProfile(user.uid);
-        if (!mounted) return;
-        if (profile != null && profile.isProfileComplete) {
-          context.go('/discover');
-        } else {
-          context.go('/onboarding');
-        }
-      }
+      ref.invalidate(currentUserProvider);
+      context.go('/discover');
     } on Exception catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
@@ -388,7 +379,18 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         duration: 600.ms,
                         delay: 400.ms,
                       ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 18),
+
+                  MobileAccessNote(locale: locale, compact: true)
+                      .animate()
+                      .fadeIn(duration: 600.ms, delay: 520.ms)
+                      .slideY(
+                        begin: 0.12,
+                        end: 0,
+                        duration: 600.ms,
+                        delay: 520.ms,
+                      ),
+                  const SizedBox(height: 16),
 
                   // Sign up link
                   TextButton(

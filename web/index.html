@@ -23,7 +23,7 @@
   <meta name="application-name" content="Nurse Singles">
   <meta name="theme-color" content="#0F766E">
   <meta name="format-detection" content="telephone=no">
-  <meta name="google-adsense-account" content="ca-pub-7587025688858323">
+  <meta name="google-adsense-account" content="ca-pub-4142591817172956">
   <link rel="canonical" href="https://nurse-singles.com/">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Nurse Singles International">
@@ -47,9 +47,257 @@
 
   <title>Nurse Singles International</title>
   <link rel="manifest" href="manifest.json">
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7587025688858323"
-     crossorigin="anonymous"></script>
   <style>
+    :root {
+      color-scheme: light;
+      --page-ink: #102a35;
+      --page-muted: #56717a;
+      --page-line: #d7e7ea;
+      --page-teal: #0d827a;
+      --page-blue: #0877b9;
+      --page-bg: #f5fbfb;
+      --page-card: #ffffff;
+    }
+
+    body {
+      margin: 0;
+      background: var(--page-bg);
+      color: var(--page-ink);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body.ns-app-route #publisher-content {
+      display: none;
+    }
+
+    #publisher-content {
+      background: linear-gradient(180deg, #eefafa 0%, #ffffff 44%, #f7fbfc 100%);
+      color: var(--page-ink);
+      min-height: 100vh;
+      position: relative;
+      z-index: 0;
+    }
+
+    .publisher-topbar {
+      background: rgba(255, 255, 255, 0.94);
+      border-bottom: 1px solid var(--page-line);
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    .publisher-nav {
+      align-items: center;
+      display: flex;
+      gap: 18px;
+      justify-content: space-between;
+      margin: 0 auto;
+      max-width: 1120px;
+      padding: 14px 20px;
+    }
+
+    .publisher-brand,
+    .publisher-links a,
+    .publisher-button {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .publisher-brand {
+      align-items: center;
+      display: inline-flex;
+      gap: 10px;
+      font-weight: 800;
+    }
+
+    .publisher-mark {
+      align-items: center;
+      background: linear-gradient(135deg, var(--page-teal), var(--page-blue));
+      border-radius: 10px;
+      color: white;
+      display: inline-flex;
+      height: 36px;
+      justify-content: center;
+      width: 36px;
+    }
+
+    .publisher-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      justify-content: flex-end;
+    }
+
+    .publisher-links a {
+      color: var(--page-muted);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .publisher-wrap {
+      margin: 0 auto;
+      max-width: 1120px;
+      padding: 46px 20px 64px;
+    }
+
+    .publisher-hero {
+      display: grid;
+      gap: 28px;
+      grid-template-columns: minmax(0, 1.12fr) minmax(300px, .88fr);
+      align-items: center;
+    }
+
+    .publisher-eyebrow {
+      color: var(--page-teal);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .publisher-hero h1 {
+      font-size: clamp(38px, 6vw, 68px);
+      letter-spacing: 0;
+      line-height: 1.02;
+      margin: 10px 0 16px;
+    }
+
+    .publisher-hero p,
+    .publisher-section p,
+    .publisher-card p {
+      color: var(--page-muted);
+      font-size: 18px;
+      line-height: 1.65;
+      margin: 0 0 18px;
+    }
+
+    .publisher-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .publisher-button {
+      align-items: center;
+      background: #0f766e;
+      border-radius: 999px;
+      color: white;
+      display: inline-flex;
+      font-size: 15px;
+      font-weight: 800;
+      justify-content: center;
+      min-height: 46px;
+      padding: 0 18px;
+    }
+
+    .publisher-button.secondary {
+      background: white;
+      border: 1px solid var(--page-line);
+      color: var(--page-teal);
+    }
+
+    .publisher-panel {
+      background: white;
+      border: 1px solid var(--page-line);
+      border-radius: 8px;
+      box-shadow: 0 18px 55px rgba(9, 63, 78, .12);
+      padding: 24px;
+    }
+
+    .publisher-panel img {
+      border: 1px solid var(--page-line);
+      border-radius: 8px;
+      display: block;
+      margin-bottom: 18px;
+      max-height: 280px;
+      object-fit: cover;
+      width: 100%;
+    }
+
+    .publisher-list {
+      display: grid;
+      gap: 12px;
+      list-style: none;
+      margin: 18px 0 0;
+      padding: 0;
+    }
+
+    .publisher-list li {
+      border-left: 4px solid var(--page-teal);
+      color: var(--page-ink);
+      line-height: 1.5;
+      padding: 4px 0 4px 12px;
+    }
+
+    .publisher-section {
+      margin-top: 52px;
+    }
+
+    .publisher-section h2 {
+      font-size: clamp(26px, 4vw, 40px);
+      letter-spacing: 0;
+      line-height: 1.15;
+      margin: 0 0 14px;
+    }
+
+    .publisher-grid {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      margin-top: 20px;
+    }
+
+    .publisher-card {
+      background: white;
+      border: 1px solid var(--page-line);
+      border-radius: 8px;
+      box-shadow: 0 12px 32px rgba(16, 42, 53, .08);
+      padding: 20px;
+    }
+
+    .publisher-card h3 {
+      font-size: 21px;
+      line-height: 1.2;
+      margin: 0 0 8px;
+    }
+
+    .publisher-card a {
+      color: var(--page-blue);
+      font-weight: 800;
+      text-decoration-thickness: 2px;
+      text-underline-offset: 3px;
+    }
+
+    .publisher-footer {
+      border-top: 1px solid var(--page-line);
+      color: var(--page-muted);
+      font-size: 14px;
+      margin-top: 54px;
+      padding-top: 22px;
+    }
+
+    @media (max-width: 800px) {
+      .publisher-hero {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .publisher-nav {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .publisher-links {
+        justify-content: flex-start;
+      }
+
+      .publisher-wrap {
+        padding-top: 30px;
+      }
+    }
+
     #pwa-install-banner {
       align-items: center;
       background: rgba(3, 47, 51, 0.96);
@@ -229,24 +477,11 @@
   <script>
     (function () {
       window.nurseSinglesAdConfig = {
-        adsensePublisherId: '__ADSENSE_PUBLISHER_ID__',
         gamRewardedAdUnitPath: '__GAM_REWARDED_AD_UNIT_PATH__'
       };
 
       var config = window.nurseSinglesAdConfig;
-      var publisherId = config.adsensePublisherId || '';
       var rewardedPath = config.gamRewardedAdUnitPath || '';
-
-      if (/^ca-pub-\d+$/.test(publisherId)) {
-        var adsenseSrc = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' + encodeURIComponent(publisherId);
-        if (!document.querySelector('script[src="' + adsenseSrc + '"]')) {
-          var adsenseScript = document.createElement('script');
-          adsenseScript.async = true;
-          adsenseScript.crossOrigin = 'anonymous';
-          adsenseScript.src = adsenseSrc;
-          document.head.appendChild(adsenseScript);
-        }
-      }
 
       window.googletag = window.googletag || { cmd: [] };
 
@@ -372,8 +607,124 @@
       };
     })();
   </script>
+<!-- Cloudflare Web Analytics -->
+<script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "db3ec6eca28d4d0995b5af51ee46f72d"}'></script>
+<!-- End Cloudflare Web Analytics -->
 </head>
 <body>
+  <script>
+    document.body.classList.add('ns-app-route');
+  </script>
+  <main id="publisher-content">
+    <header class="publisher-topbar">
+      <nav class="publisher-nav" aria-label="Nurse Singles site navigation">
+        <a class="publisher-brand" href="/">
+          <span class="publisher-mark">NS</span>
+          <span>Nurse Singles</span>
+        </a>
+        <div class="publisher-links">
+          <a href="/welcome">Open Web App</a>
+          <a href="/blog/">Nurse Hub</a>
+          <a href="/privacy">Privacy</a>
+          <a href="/terms">Terms</a>
+          <a href="/child-safety-standards">Safety</a>
+        </div>
+      </nav>
+    </header>
+
+    <div class="publisher-wrap">
+      <section class="publisher-hero" aria-labelledby="publisher-title">
+        <div>
+          <div class="publisher-eyebrow">Healthcare dating and community</div>
+          <h1 id="publisher-title">Shift-aware dating for nurses and healthcare workers</h1>
+          <p>
+            Nurse Singles is built for adult healthcare professionals who want a dating and
+            community experience that respects real clinical schedules, workplace privacy,
+            credential confidence, and safer first conversations.
+          </p>
+          <p>
+            The app supports nurses, nursing students, travel clinicians, doctors, allied
+            health workers, dental professionals, hospital staff, staffing-agency clinicians,
+            and healthcare singles who understand shift work.
+          </p>
+          <div class="publisher-actions">
+            <a class="publisher-button" href="/welcome">Open the web app</a>
+            <a class="publisher-button secondary" href="/blog/">Read Nurse Hub guides</a>
+          </div>
+        </div>
+
+        <aside class="publisher-panel" aria-label="What makes Nurse Singles different">
+          <img src="/blog/images/us-healthcare-video-intros.jpg" alt="Healthcare professionals using a safe video intro before meeting">
+          <div class="publisher-eyebrow">Built around healthcare life</div>
+          <ul class="publisher-list">
+            <li>Match signals for day shift, night shift, rotating schedules, and dating windows.</li>
+            <li>Privacy controls for workplace visibility, coworkers, departments, and profile details.</li>
+            <li>Healthcare verification options for workers, students, travel nurses, agencies, and partners.</li>
+            <li>Speed dating rooms with hospital-themed spaces and mutual follow-up consent.</li>
+            <li>Public safety standards, reporting flows, and account deletion information available before signup.</li>
+          </ul>
+        </aside>
+      </section>
+
+      <section class="publisher-section" aria-labelledby="guide-title">
+        <div class="publisher-eyebrow">Publisher content</div>
+        <h2 id="guide-title">Practical guides for healthcare singles</h2>
+        <p>
+          These guides explain the problems Nurse Singles is designed around: shift fatigue,
+          privacy around hospitals and clinics, student clinical schedules, travel assignments,
+          safer video intros, and dating across healthcare roles.
+        </p>
+        <div class="publisher-grid">
+          <article class="publisher-card">
+            <h3><a href="/blog/us-night-shift-nurse-dating">Night Shift Nurse Dating in the United States</a></h3>
+            <p>How nurses can meet people around overnight schedules, recovery time, and quiet hours.</p>
+          </article>
+          <article class="publisher-card">
+            <h3><a href="/blog/us-healthcare-privacy-dating">Privacy-First Dating for Healthcare Workers</a></h3>
+            <p>What healthcare workers should expect from workplace privacy and profile controls.</p>
+          </article>
+          <article class="publisher-card">
+            <h3><a href="/blog/us-healthcare-video-intros">Healthcare Video Intros</a></h3>
+            <p>How brief video intros can make first conversations safer before meeting in person.</p>
+          </article>
+          <article class="publisher-card">
+            <h3><a href="/blog/us-allied-healthcare-dating">Allied Healthcare Dating</a></h3>
+            <p>Why therapists, techs, assistants, dental workers, and clinical support staff belong here too.</p>
+          </article>
+          <article class="publisher-card">
+            <h3><a href="/blog/international-india-nursing-students-dating">India Nursing Student Dating</a></h3>
+            <p>Safer community ideas for nursing students and healthcare careers in India.</p>
+          </article>
+          <article class="publisher-card">
+            <h3><a href="/blog/international-global-travel-nurse-dating">Global Travel Nurse Dating</a></h3>
+            <p>Connection across assignments, borders, languages, time zones, and temporary cities.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="publisher-section" aria-labelledby="safety-title">
+        <div class="publisher-eyebrow">Trust and transparency</div>
+        <h2 id="safety-title">Clear policies before anyone creates an account</h2>
+        <p>
+          Nurse Singles keeps the public policy pages available without requiring login. Visitors
+          can review the privacy policy, terms, child safety standards, and account deletion
+          instructions before using the dating app.
+        </p>
+        <div class="publisher-actions">
+          <a class="publisher-button secondary" href="/privacy">Privacy Policy</a>
+          <a class="publisher-button secondary" href="/terms">Terms of Service</a>
+          <a class="publisher-button secondary" href="/child-safety-standards">Child Safety Standards</a>
+          <a class="publisher-button secondary" href="/account-deletion">Account Deletion</a>
+        </div>
+      </section>
+
+      <footer class="publisher-footer">
+        Nurse Singles is for adults. It is a healthcare-focused dating and community product,
+        not medical advice, not a healthcare provider, and not a place to share protected patient information.
+      </footer>
+    </div>
+  </main>
+
   <div id="pwa-install-banner" hidden>
     <div id="pwa-install-copy">
       <strong>Install app to phone</strong>

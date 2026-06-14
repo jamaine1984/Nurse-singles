@@ -60,6 +60,8 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage>
   bool _rewindInFlight = false;
   bool _suppressNextSwipeRecord = false;
   CardSwiperDirection _lastSwipeDirection = CardSwiperDirection.left;
+  final Set<String> _pendingSwipeProfileIds = {};
+  final Set<String> _swipedThisSessionProfileIds = {};
 
   String _t(String key) {
     return AppLocalizations.translate(key, ref.read(localeProvider));
@@ -87,6 +89,8 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage>
     final targetUser = _profiles[previousIndex];
     final currentUser = ref.read(currentUserProvider).valueOrNull;
     if (currentUser == null) return false;
+    _pendingSwipeProfileIds.add(targetUser.id);
+    _swipedThisSessionProfileIds.add(targetUser.id);
 
     bool isLike = false;
     bool isSuperLike = false;
@@ -150,6 +154,8 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage>
       }
     } on SwipeUsageLimitException catch (error) {
       if (!mounted) return;
+      _pendingSwipeProfileIds.remove(targetUser.id);
+      _swipedThisSessionProfileIds.remove(targetUser.id);
       _swiperController.undo();
       unawaited(
         _handleSwipeLimit(
@@ -163,6 +169,8 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage>
     } catch (error) {
       debugPrint('[DiscoverPage] Swipe failed: $error');
       if (!mounted) return;
+      _pendingSwipeProfileIds.remove(targetUser.id);
+      _swipedThisSessionProfileIds.remove(targetUser.id);
       _swiperController.undo();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -174,6 +182,8 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage>
           backgroundColor: AppTheme.warmRose,
         ),
       );
+    } finally {
+      _pendingSwipeProfileIds.remove(targetUser.id);
     }
   }
 
@@ -539,9 +549,39 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage>
   }
 
   Future<void> _refreshDiscoveryDeck() async {
+    final currentUser = ref.read(currentUserProvider).valueOrNull;
+    if (currentUser != null) {
+      ref
+          .read(discoverServiceProvider)
+          .clearProfileCacheForUser(currentUser.id);
+    }
     _profilesLoaded = false;
     _profileStackKey = null;
     ref.invalidate(profilesProvider);
+  }
+
+  List<UserModel> _profilesReadyForDisplay(List<UserModel> profiles) {
+    final excludedIds = {
+      ..._swipedThisSessionProfileIds,
+      ..._pendingSwipeProfileIds,
+    };
+    var visibleProfiles = profiles
+        .where(
+          (profile) =>
+              profile.displayPhoto != null && !excludedIds.contains(profile.id),
+        )
+        .toList(growable: false);
+
+    if (visibleProfiles.isEmpty &&
+        profiles.isNotEmpty &&
+        _pendingSwipeProfileIds.isEmpty) {
+      _swipedThisSessionProfileIds.clear();
+      visibleProfiles = profiles
+          .where((profile) => profile.displayPhoto != null)
+          .toList(growable: false);
+    }
+
+    return visibleProfiles;
   }
 
   void _dismissMatch() {
@@ -780,11 +820,12 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage>
                 loading: () => _buildShimmerLoading(),
                 error: (error, _) => _buildError(error, theme),
                 data: (profiles) {
-                  final stackKey = profiles
+                  final visibleProfiles = _profilesReadyForDisplay(profiles);
+                  final stackKey = visibleProfiles
                       .map((profile) => profile.id)
                       .join('|');
                   if (!_profilesLoaded || stackKey != _profileStackKey) {
-                    _profiles = profiles;
+                    _profiles = visibleProfiles;
                     _profilesLoaded = true;
                     _profileStackKey = stackKey;
                   }
@@ -876,7 +917,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage>
                     backCardOffset: const Offset(0, -22),
                     scale: 0.94,
                     padding: EdgeInsets.zero,
-                    isLoop: true,
+                    isLoop: false,
                     showBackCardOnUndo: true,
                     undoSwipeThreshold: 32,
                     allowedSwipeDirection: const AllowedSwipeDirection.only(

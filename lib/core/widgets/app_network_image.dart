@@ -29,8 +29,8 @@ class AppNetworkImage extends StatelessWidget {
       width: width,
       height: height,
       imageRenderMethodForWeb: kIsWeb
-          ? ImageRenderMethodForWeb.HttpGet
-          : ImageRenderMethodForWeb.HtmlImage,
+          ? ImageRenderMethodForWeb.HtmlImage
+          : ImageRenderMethodForWeb.HttpGet,
       placeholder: placeholder,
       errorWidget: errorWidget,
     );

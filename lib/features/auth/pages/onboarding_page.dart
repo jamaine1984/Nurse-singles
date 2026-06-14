@@ -322,6 +322,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   // ── Navigation ──
 
   void _goToStep(int step) {
+    if (step > 0 && !_hasRequiredProfileImage(showError: true)) {
+      return;
+    }
+
     _pageController.animateToPage(
       step,
       duration: const Duration(milliseconds: 400),
@@ -336,6 +340,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
     switch (_currentStep) {
       case 0: // Personal info
+        if (!_hasRequiredProfileImage(showError: true)) {
+          return false;
+        }
         if (_nameController.text.trim().isEmpty) {
           _showError(t('error_name_required'));
           return false;
@@ -406,6 +413,59 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   void _handleBack() {
     if (_currentStep > 0) {
       _goToStep(_currentStep - 1);
+    }
+  }
+
+  bool _hasRequiredProfileImage({bool showError = false}) {
+    if (_profileImage != null) return true;
+    if (showError) {
+      _showError(
+        AppLocalizations.translate(
+          'error_photo_required',
+          ref.read(localeProvider),
+        ),
+      );
+    }
+    return false;
+  }
+
+  Future<void> _handleExitSetup({String destination = '/welcome'}) async {
+    final locale = ref.read(localeProvider);
+    String t(String key) => AppLocalizations.translate(key, locale);
+
+    final shouldExit = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(t('exit_setup_title')),
+        content: Text(t('exit_setup_body')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(t('cancel')),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.warmRose,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(t('exit_setup')),
+          ),
+        ],
+      ),
+    );
+    if (shouldExit != true) return;
+
+    setState(() => _isSaving = true);
+    try {
+      await ref.read(authServiceProvider).signOut();
+      ref.invalidate(currentUserProvider);
+      if (!mounted) return;
+      context.go(destination);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+      _showError(t('error_generic'));
     }
   }
 
@@ -537,6 +597,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   Future<void> _handleCompleteProfile() async {
     if (!_validateCurrentStep()) return;
 
+    if (!_hasRequiredProfileImage(showError: true)) {
+      return;
+    }
+
     setState(() => _isSaving = true);
 
     try {
@@ -544,14 +608,13 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       final uid = authService.currentUser?.uid;
       if (uid == null) throw Exception('Not authenticated');
 
-      // Upload profile image if selected
-      String? photoUrl;
-      if (_profileImage != null) {
-        final storageService = ref.read(storageServiceProvider);
-        photoUrl = await storageService.uploadProfileImage(
-          userId: uid,
-          file: _profileImage!,
-        );
+      final storageService = ref.read(storageServiceProvider);
+      final photoUrl = await storageService.uploadProfileImage(
+        userId: uid,
+        file: _profileImage!,
+      );
+      if (photoUrl.trim().isEmpty) {
+        throw StateError('Profile image upload returned an empty URL.');
       }
 
       // Build profile data map
@@ -577,9 +640,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             : _bioController.text.trim(),
       };
 
-      if (photoUrl != null) {
-        profileData['photoUrl'] = photoUrl;
-      }
+      profileData['photoUrl'] = photoUrl;
+      profileData['hasProfilePhoto'] = true;
 
       await authService.updateUserProfile(profileData);
 
@@ -643,35 +705,70 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 child: Column(
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        if (_currentStep > 0)
-                          GestureDetector(
-                            onTap: _handleBack,
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Icon(
-                                Icons.arrow_back_rounded,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                            ),
-                          )
-                        else
-                          const SizedBox(width: 36),
-                        Text(
-                          '${_currentStep + 1} / 5',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white.withValues(alpha: 0.7),
+                        SizedBox(
+                          width: 96,
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: _currentStep > 0
+                                ? GestureDetector(
+                                    onTap: _isSaving ? null : _handleBack,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.1,
+                                        ),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const Icon(
+                                        Icons.arrow_back_rounded,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
+                                    ),
+                                  )
+                                : const SizedBox(width: 36, height: 36),
                           ),
                         ),
-                        const SizedBox(width: 36),
+                        Expanded(
+                          child: Center(
+                            child: Text(
+                              '${_currentStep + 1} / 5',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white.withValues(alpha: 0.7),
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 96,
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: _isSaving ? null : _handleExitSetup,
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.white.withValues(
+                                  alpha: 0.78,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                ),
+                                minimumSize: const Size(0, 36),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: Text(
+                                t('exit_setup'),
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -886,6 +983,18 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 duration: 500.ms,
                 delay: 100.ms,
               ),
+          const SizedBox(height: 10),
+          Center(
+            child: Text(
+              t('profile_photo_required_hint'),
+              textAlign: TextAlign.center,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: Colors.white.withValues(alpha: 0.72),
+              ),
+            ),
+          ),
           const SizedBox(height: 24),
 
           // Name

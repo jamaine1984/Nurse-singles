@@ -136,7 +136,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (isLoading) return null;
 
       final isLoggedIn = authState.valueOrNull != null;
-      final userProfile = currentUser.valueOrNull;
       final currentPath = state.uri.path;
 
       final publicRoutes = [
@@ -147,16 +146,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       ];
 
       final isOnPublicRoute = publicRoutes.contains(currentPath);
-      final isOnOnboarding = currentPath == RoutePaths.onboarding;
 
       if (!isLoggedIn) {
         if (isOnPublicRoute) return null;
         return RoutePaths.welcome;
       }
 
-      if (isLoggedIn && userProfile != null && !userProfile.isProfileComplete) {
-        if (isOnOnboarding) return null;
-        return RoutePaths.onboarding;
+      if (currentPath == RoutePaths.signup) {
+        return null;
       }
 
       if (isLoggedIn && (isOnPublicRoute || currentPath == RoutePaths.splash)) {

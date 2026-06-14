@@ -16,7 +16,61 @@
     "cleanUrls": true,
     "headers": [
       {
+        "source": "/",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "/app",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "index.html",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "app.html",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "**/*.html",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
         "source": "/index.html",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "/app.html",
         "headers": [
           {
             "key": "Cache-Control",
@@ -89,8 +143,112 @@
     ],
     "rewrites": [
       {
-        "source": "**",
-        "destination": "/index.html"
+        "source": "/welcome",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/login",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/signup",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/onboarding",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/home",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/discover",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/discover/**",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/matches",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/social",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/nurse-hub",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/messages",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/messages/**",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/video",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/video/**",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/profile",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/gifts",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/gifts/**",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/night-owls",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/compatibility",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/subscription",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/subscription/**",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/dashboard",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/settings",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/settings/**",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/admin",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/entertainment",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/verification",
+        "destination": "/app.html"
       }
     ]
   },

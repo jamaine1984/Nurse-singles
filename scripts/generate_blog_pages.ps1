@@ -149,6 +149,71 @@ $Posts = @(
     CTA = 'Nurse Singles can make video intros feel practical for healthcare workers by keeping calls short, consent-based, and easy to leave.'
   }
   [ordered]@{
+    Slug = 'us-california-nurse-dating'
+    Title = 'California Nurse Dating: Los Angeles, San Diego, Bay Area, and Travel Assignments'
+    Region = 'United States'
+    Category = 'California'
+    Image = 'us-travel-nurse-dating.jpg'
+    Meta = 'A California-focused nurse dating guide for healthcare workers balancing hospital schedules, travel assignments, city distance, and privacy.'
+    Intro = 'California healthcare dating can stretch across large metro areas, long commutes, rotating shifts, and travel contracts. Nurses in Los Angeles, San Diego, Sacramento, the Bay Area, and inland cities need dating that respects real healthcare timing.'
+    Angle = 'A stronger California nurse dating profile should make region, shift type, travel openness, and dating goals clear while keeping exact workplace details private.'
+    Signals = @('California city or region preferences', 'Travel assignment and commute-aware dating windows', 'Day, night, rotating, and per-diem schedule signals', 'Workplace privacy controls for large hospital systems')
+    Safety = 'California healthcare workers should be able to hide exact hospitals, avoid coworkers, and use video intros before committing to long-distance or cross-city meetups.'
+    CTA = 'Nurse Singles can help California nurses and healthcare workers connect around schedules, region, privacy, and real availability.'
+  }
+  [ordered]@{
+    Slug = 'us-texas-nurse-dating'
+    Title = 'Texas Nurse Dating: Houston, Dallas, Austin, San Antonio, and Rural Healthcare'
+    Region = 'United States'
+    Category = 'Texas'
+    Image = 'us-rural-healthcare-dating.jpg'
+    Meta = 'A Texas healthcare dating guide for nurses, travel clinicians, students, and hospital staff across major cities and rural regions.'
+    Intro = 'Texas healthcare workers can face big-city hospital systems, rural clinics, long drives, and fast-growing travel nurse markets. Dating needs to support distance, schedule, and privacy at the same time.'
+    Angle = 'Texas nurse dating works better when users can show city or region, preferred dating window, healthcare role, and whether they are open to local, regional, or long-distance connection.'
+    Signals = @('Houston, Dallas, Austin, San Antonio, and regional discovery options', 'Rural and metro distance preferences', 'Healthcare role and student badges', 'Video intro before longer travel')
+    Safety = 'In both large hospital systems and small towns, exact workplace visibility should stay optional. Users need blocking, reporting, and privacy controls before deeper conversation.'
+    CTA = 'Nurse Singles can help Texas healthcare singles meet around real schedules instead of forcing every match into a generic dating app rhythm.'
+  }
+  [ordered]@{
+    Slug = 'us-florida-nurse-dating'
+    Title = 'Florida Nurse Dating: Miami, Orlando, Tampa, Jacksonville, and Travel Healthcare'
+    Region = 'United States'
+    Category = 'Florida'
+    Image = 'us-healthcare-video-intros.jpg'
+    Meta = 'A Florida nurse dating guide for healthcare workers managing hospital shifts, travel assignments, seasonal movement, and privacy.'
+    Intro = 'Florida healthcare dating can involve travel contracts, seasonal residents, busy hospital markets, and long commutes between cities. Nurses and allied health workers need a profile that makes timing and boundaries clear.'
+    Angle = 'A Florida-focused experience should support city discovery, language preferences, shift type, travel openness, and safer video introductions before meeting.'
+    Signals = @('Miami, Orlando, Tampa, Jacksonville, and regional filters', 'Travel assignment and seasonal schedule preferences', 'Language and dating goal options', 'Privacy controls for workplace and department details')
+    Safety = 'Healthcare workers should not have to expose exact facilities, home location, or contract details to meet someone. Safer introductions and report tools matter.'
+    CTA = 'Nurse Singles can help Florida nurses and healthcare workers find matches who respect work schedules, privacy, and real recovery time.'
+  }
+  [ordered]@{
+    Slug = 'us-new-york-nurse-dating'
+    Title = 'New York Nurse Dating: NYC Healthcare Schedules, Privacy, and Better Match Timing'
+    Region = 'United States'
+    Category = 'New York'
+    Image = 'us-night-shift-nurse-dating.jpg'
+    Meta = 'A New York nurse dating guide for NYC and statewide healthcare workers balancing dense schedules, commutes, privacy, and shift work.'
+    Intro = 'New York healthcare workers often manage dense hospital systems, subway commutes, late-night shifts, and fast-paced social expectations. Dating works better when schedule and energy are part of matching.'
+    Angle = 'A useful New York nurse dating profile should show preferred borough or region, shift pattern, communication window, and whether the user wants serious dating, friendship first, or low-pressure video intros.'
+    Signals = @('NYC borough, city, and statewide region preferences', 'Night shift and commute-aware conversation windows', 'Privacy controls for workplace and coworkers', 'Short video intros before meeting')
+    Safety = 'Dense cities make privacy important. Users should be able to hide workplace details, block quickly, and keep early conversations inside the app.'
+    CTA = 'Nurse Singles can help New York healthcare singles connect around timing, city distance, and workplace privacy.'
+  }
+  [ordered]@{
+    Slug = 'us-atlanta-healthcare-dating'
+    Title = 'Atlanta Healthcare Dating: Nurses, Students, Travel Clinicians, and Hospital Staff'
+    Region = 'United States'
+    Category = 'Atlanta'
+    Image = 'us-allied-healthcare-dating.jpg'
+    Meta = 'An Atlanta healthcare dating guide for nurses, allied health workers, nursing students, and travel clinicians looking for schedule-aware connection.'
+    Intro = 'Atlanta healthcare dating can include major hospitals, nursing programs, travel contracts, suburban distance, and busy nightlife that does not always fit clinical schedules.'
+    Angle = 'A better healthcare dating experience should let Atlanta users show role, shift type, school or student status when they choose, distance preferences, and safe conversation timing.'
+    Signals = @('Atlanta metro and surrounding suburb discovery', 'Healthcare worker and student badges', 'After-shift and off-day availability', 'Friendship-first, serious dating, and video intro options')
+    Safety = 'Users should control whether school, employer, department, or exact workplace details appear on their profile. Safety tools should be available before meeting.'
+    CTA = 'Nurse Singles can help Atlanta healthcare workers meet people who understand clinical schedules and respect boundaries.'
+  }
+  [ordered]@{
     Slug = 'international-uk-nurses-dating'
     Title = 'UK Nurse Dating: Building Healthcare Connections Around Shifts and Privacy'
     Region = 'International'
@@ -277,6 +342,71 @@ $Posts = @(
     Signals = @('Assignment dates and next destination fields', 'Timezone and language-aware communication', 'Video intros before long-distance commitment', 'Privacy controls for employer, housing, and travel details')
     Safety = 'Global dating needs strong scam prevention, private credential review, content reporting, and reminders not to share financial or identity details too quickly.'
     CTA = 'Nurse Singles can make global travel nurse dating more realistic by centering mobility, safety, healthcare identity, and consent-based connection.'
+  }
+  [ordered]@{
+    Slug = 'international-uae-nurse-dating'
+    Title = 'UAE Nurse Dating: Dubai, Abu Dhabi, Healthcare Expats, and Privacy'
+    Region = 'International'
+    Category = 'UAE'
+    Image = 'international-middle-east-healthcare-expats.jpg'
+    Meta = 'A UAE nurse dating guide for healthcare expats and local healthcare workers in Dubai, Abu Dhabi, and nearby cities.'
+    Intro = 'Healthcare workers in the UAE may balance expat life, long shifts, cultural expectations, and privacy concerns. Dating should feel respectful, careful, and schedule-aware.'
+    Angle = 'A UAE-focused healthcare dating profile should support city, language, dating goals, role verification, and privacy controls without exposing employer, housing, or credential details publicly.'
+    Signals = @('Dubai, Abu Dhabi, Sharjah, and regional discovery', 'Language and lifestyle preferences when users choose to show them', 'Healthcare worker and student verification', 'Video intro before meeting in person')
+    Safety = 'International healthcare dating should warn users against financial requests, off-app pressure, and oversharing workplace or housing information.'
+    CTA = 'Nurse Singles can support UAE healthcare singles with professional identity, safer introductions, and privacy-first matching.'
+  }
+  [ordered]@{
+    Slug = 'international-saudi-arabia-nurse-dating'
+    Title = 'Saudi Arabia Nurse Dating: Healthcare Expats, Privacy, and Respectful Connection'
+    Region = 'International'
+    Category = 'Saudi Arabia'
+    Image = 'international-middle-east-healthcare-expats.jpg'
+    Meta = 'A Saudi Arabia healthcare dating guide for nurses, hospital workers, and expats who need privacy-aware, respectful connection.'
+    Intro = 'Nurses and healthcare workers in Saudi Arabia can face demanding shifts, expat distance from home, and cultural expectations around privacy. Dating tools should treat those realities carefully.'
+    Angle = 'A Saudi Arabia healthcare dating experience should prioritize privacy, language preferences, city or region selection, and respectful communication before any in-person meeting.'
+    Signals = @('City and region discovery for healthcare workers', 'Language and dating goal preferences', 'Healthcare identity without public credential exposure', 'Consent-based video introductions')
+    Safety = 'Users should keep employer details, housing location, financial information, and personal documents private. Reporting and blocking should be easy.'
+    CTA = 'Nurse Singles can help healthcare workers in Saudi Arabia connect carefully around role, schedule, culture, and privacy.'
+  }
+  [ordered]@{
+    Slug = 'international-germany-nurse-dating'
+    Title = 'Germany Nurse Dating: Healthcare Workers, Language, Shifts, and City Matching'
+    Region = 'International'
+    Category = 'Germany'
+    Image = 'international-europe-healthcare-workers-dating.jpg'
+    Meta = 'A Germany healthcare dating guide for nurses, clinical staff, and international healthcare workers balancing language, shifts, and privacy.'
+    Intro = 'Healthcare workers in Germany may manage rotating shifts, multilingual communication, city distance, and international career moves. Dating works better when language and schedule are visible in the match.'
+    Angle = 'A useful profile should support German and other language preferences, city or region, healthcare role, shift type, and workplace privacy.'
+    Signals = @('Berlin, Munich, Hamburg, Frankfurt, Cologne, and regional discovery', 'Language compatibility and timezone-aware messaging', 'Shift and specialty signals', 'Workplace privacy controls')
+    Safety = 'Users should control exact workplace visibility and keep identity documents or credential details out of public profile fields.'
+    CTA = 'Nurse Singles can help healthcare workers in Germany connect through language, schedule, role, and privacy-aware matching.'
+  }
+  [ordered]@{
+    Slug = 'international-ireland-nurse-dating'
+    Title = 'Ireland Nurse Dating: Healthcare Workers, Hospital Shifts, and Safer Introductions'
+    Region = 'International'
+    Category = 'Ireland'
+    Image = 'international-uk-nurses-dating.jpg'
+    Meta = 'An Ireland nurse dating guide for healthcare workers who want shift-aware matching, city discovery, privacy, and respectful communication.'
+    Intro = 'Nurses and healthcare workers in Ireland can balance hospital shifts, training, commutes, and close community visibility. Dating should protect privacy while supporting real connection.'
+    Angle = 'Ireland-focused healthcare dating should support city and regional preferences, shift type, dating goals, and workplace privacy for nurses, students, doctors, and allied health workers.'
+    Signals = @('Dublin, Cork, Galway, Limerick, and regional discovery', 'Day, night, and rotating shift matching', 'Healthcare worker and student badges', 'Privacy controls for employer and department')
+    Safety = 'In close communities, exact workplace and department details should stay optional. Users need easy report, block, and account deletion paths.'
+    CTA = 'Nurse Singles can help healthcare singles in Ireland meet around real schedules and safer introductions.'
+  }
+  [ordered]@{
+    Slug = 'international-new-zealand-nurse-dating'
+    Title = 'New Zealand Nurse Dating: Healthcare Singles, Regional Distance, and Privacy'
+    Region = 'International'
+    Category = 'New Zealand'
+    Image = 'international-australia-nurses-dating.jpg'
+    Meta = 'A New Zealand nurse dating guide for healthcare workers managing regional distance, hospital schedules, travel, and privacy.'
+    Intro = 'Healthcare workers in New Zealand may deal with regional distance, shift work, travel between cities, and smaller community visibility. Dating needs to account for both distance and privacy.'
+    Angle = 'A New Zealand healthcare dating profile should make region, shift type, travel openness, language, and dating goals clear without forcing exact employer details into public view.'
+    Signals = @('Auckland, Wellington, Christchurch, and regional discovery', 'Distance and travel openness preferences', 'Shift-aware messaging windows', 'Privacy controls for workplace visibility')
+    Safety = 'Smaller communities need careful privacy options. Users should be able to hide workplace details, block quickly, and keep early communication inside the app.'
+    CTA = 'Nurse Singles can help New Zealand healthcare singles connect around role, region, schedule, and privacy.'
   }
 )
 
@@ -431,6 +561,8 @@ $sitemapUrls.Add("$BaseUrl/privacy")
 $sitemapUrls.Add("$BaseUrl/terms")
 $sitemapUrls.Add("$BaseUrl/account-deletion")
 $sitemapUrls.Add("$BaseUrl/child-safety-standards")
+$sitemapUrls.Add("$BaseUrl/about")
+$sitemapUrls.Add("$BaseUrl/contact")
 $sitemapUrls.Add("$BaseUrl/blog/")
 
 foreach ($post in $Posts) {
@@ -447,6 +579,9 @@ foreach ($post in $Posts) {
   $imagePath = "/blog/images/$($post.Image)"
   $imageUrl = "$ImageBase/$($post.Image)"
   $signals = ($post.Signals | ForEach-Object { "          <li>$(Encode-Html $_)</li>" }) -join "`n"
+  $practicalChecklist = ($post.Signals | ForEach-Object {
+    "          <li>Use your profile to explain how `"$([System.Net.WebUtility]::HtmlEncode($_).ToLowerInvariant())`" affects your real availability and boundaries.</li>"
+  }) -join "`n"
   $jsonLd = [ordered]@{
     '@context' = 'https://schema.org'
     '@type' = 'BlogPosting'
@@ -495,9 +630,11 @@ foreach ($post in $Posts) {
       </a>
       <div class="nav-links">
         <a href="/blog/">Nurse Hub</a>
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
         <a href="/privacy">Privacy</a>
         <a href="/child-safety-standards">Safety</a>
-        <a href="/">Open App</a>
+        <a href="/welcome">Open App</a>
       </div>
     </nav>
   </header>
@@ -517,25 +654,45 @@ foreach ($post in $Posts) {
       <h2>Why Healthcare Dating Needs Its Own Rules</h2>
       <p>$angle</p>
       <p>Healthcare schedules are rarely simple. Weekends, holidays, nights, call shifts, clinical rotations, agency contracts, and overtime can all affect when someone has energy to talk or meet. A better dating experience should treat those details as normal instead of making users explain them over and over.</p>
+      <p>Generic dating apps often focus on age, distance, and a few photos. Healthcare workers usually need more context before a conversation feels worth the time. A nurse coming off three nights in a row may not want the same communication pace as a dental assistant on weekday hours, a travel clinician between contracts, or a nursing student preparing for clinicals. That is why role, schedule, privacy, and intent need to be part of the first impression.</p>
 
       <h2>Signals That Make Matching More Useful</h2>
       <ul class="signal-list">
 $signals
       </ul>
       <p>These signals help create better introductions because they connect people around rhythm, respect, goals, and communication style. They also reduce wasted messages from people who do not understand healthcare life.</p>
+      <p>Good profile signals should not feel like an interview. They should help another person understand when to message, what kind of date is realistic, and how quickly to move from chat to video or an in-person plan. The best signals are specific enough to be useful, but private enough that users do not have to expose exact employer, patient, license, or housing details.</p>
+
+      <h2>Profile Checklist for This Situation</h2>
+      <p>A stronger profile for this topic should answer practical questions without oversharing. Before messaging, another user should understand your schedule rhythm, the kind of connection you want, and what information you prefer to keep private until trust is built.</p>
+      <ul class="signal-list">
+$practicalChecklist
+          <li>Choose a dating goal that matches your season of life, whether that is serious dating, friendship first, video intros, or a slower pace.</li>
+          <li>Keep your exact workplace, license numbers, patient details, and home location out of public profile text.</li>
+      </ul>
+
+      <h2>Conversation Starters That Respect Healthcare Life</h2>
+      <p>Healthcare workers often respond better to practical, low-pressure messages. Instead of asking why someone was unavailable, ask whether they prefer messages before shift, after handoff, or on off days. Instead of pushing for an immediate meetup, suggest a short video intro or a planned conversation window when both people are rested.</p>
+      <p>Respectful questions can also reveal compatibility quickly: what type of schedule feels sustainable, whether travel assignments are temporary or long term, how someone decompresses after work, and what kind of relationship pace feels realistic. These questions keep the focus on dating fit without turning the conversation into a clinical debrief.</p>
 
       <h2>Privacy and Safety Come First</h2>
       <p>$safety</p>
       <p>For healthcare workers, safety also means workplace boundaries. A profile can show that someone is verified without revealing license numbers, exact employer details, patient information, or private documents. Users should be able to report, block, delete accounts, and control what is visible.</p>
+      <p>Users should be especially careful with photos taken at work. Even when no patient is visible, badges, hallway signs, computer screens, room numbers, and employer logos can reveal more than intended. A safer dating profile uses personal photos, neutral backgrounds, and optional broad workplace labels instead of exact facility names.</p>
+
+      <h2>What to Avoid Sharing Publicly</h2>
+      <p>Do not post patient stories, protected health information, medical record details, facility incidents, private credential documents, exact housing information, or employer-confidential details. Healthcare connection should be built around shared lifestyle and values, not sensitive work information.</p>
+      <p>If a match asks for money, personal identity documents, off-platform contact too quickly, explicit images, or exact workplace details, pause the conversation and use blocking or reporting tools when needed. A dating app for healthcare workers should make safety feel normal, not awkward.</p>
 
       <h2>How Nurse Singles Can Help</h2>
       <p>Nurse Singles is built for nurses, nursing students, travel clinicians, doctors, and healthcare workers who want connection with people who understand the work. The app can support shift-aware matching, healthcare badges, video intros, community content, and safer follow-up after speed dating rooms.</p>
       <p>$cta</p>
+      <p>The goal is to make healthcare dating feel more intentional: better timing, clearer expectations, safer privacy choices, and more useful reasons to start a conversation. Whether someone works in a hospital, clinic, dental office, school program, agency role, or travel assignment, the app should help them meet people without giving up professional boundaries.</p>
 
       <section class="cta" aria-label="Try Nurse Singles">
         <h2>Join the Healthcare Singles Community</h2>
         <p>Create a profile built around your role, your schedule, your privacy settings, and the kind of connection you want.</p>
-        <a href="/">Open Nurse Singles</a>
+        <a href="/welcome">Open Nurse Singles</a>
         <a href="/blog/">Read More</a>
       </section>
     </article>
@@ -599,7 +756,9 @@ $blogIndex = @"
         <strong>Nurse Singles</strong>
       </a>
       <div class="nav-links">
-        <a href="/">Open App</a>
+        <a href="/welcome">Open App</a>
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
         <a href="/privacy">Privacy</a>
         <a href="/child-safety-standards">Safety</a>
       </div>

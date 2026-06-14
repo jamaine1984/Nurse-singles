@@ -111,9 +111,18 @@ class AuthService {
   Future<void> signOut() async {
     final uid = _auth.currentUser?.uid;
     if (uid != null) {
-      await _firestore.collection(AppConstants.usersCollection).doc(uid).update(
-        {'isOnline': false, 'lastSeen': FieldValue.serverTimestamp()},
-      );
+      try {
+        await _firestore
+            .collection(AppConstants.usersCollection)
+            .doc(uid)
+            .update({
+              'isOnline': false,
+              'lastSeen': FieldValue.serverTimestamp(),
+            });
+      } catch (_) {
+        // Signing out must still succeed if the profile doc is missing,
+        // offline, or temporarily blocked by rules/App Check.
+      }
     }
     await _auth.signOut();
   }
@@ -173,12 +182,20 @@ class AuthService {
     final uid = _auth.currentUser?.uid;
     if (uid == null) throw StateError('No authenticated user');
 
-    fields['updatedAt'] = FieldValue.serverTimestamp();
+    final updateFields = Map<String, dynamic>.from(fields);
+    if (_touchesPhotoFields(updateFields) &&
+        !updateFields.containsKey('hasProfilePhoto')) {
+      updateFields['hasProfilePhoto'] = await _profilePhotoStateAfterUpdate(
+        uid,
+        updateFields,
+      );
+    }
+    updateFields['updatedAt'] = FieldValue.serverTimestamp();
 
     await _firestore
         .collection(AppConstants.usersCollection)
         .doc(uid)
-        .update(fields);
+        .update(updateFields);
   }
 
   /// Alias matching the previous API surface.
@@ -232,5 +249,44 @@ class AuthService {
           if (!doc.exists || doc.data() == null) return null;
           return UserModel.fromFirestore(doc);
         });
+  }
+
+  bool _touchesPhotoFields(Map<String, dynamic> fields) {
+    return fields.containsKey('photoUrl') || fields.containsKey('gallery');
+  }
+
+  Future<bool> _profilePhotoStateAfterUpdate(
+    String uid,
+    Map<String, dynamic> fields,
+  ) async {
+    if (_hasPhotoUrl(fields['photoUrl']) ||
+        _hasGalleryPhoto(fields['gallery'])) {
+      return true;
+    }
+    if (fields.containsKey('photoUrl') && fields.containsKey('gallery')) {
+      return false;
+    }
+
+    final doc = await _firestore
+        .collection(AppConstants.usersCollection)
+        .doc(uid)
+        .get();
+    final current = doc.data();
+    final nextPhotoUrl = fields.containsKey('photoUrl')
+        ? fields['photoUrl']
+        : current?['photoUrl'];
+    final nextGallery = fields.containsKey('gallery')
+        ? fields['gallery']
+        : current?['gallery'];
+    return _hasPhotoUrl(nextPhotoUrl) || _hasGalleryPhoto(nextGallery);
+  }
+
+  bool _hasPhotoUrl(dynamic value) {
+    return value is String && value.trim().isNotEmpty;
+  }
+
+  bool _hasGalleryPhoto(dynamic value) {
+    if (value is! Iterable) return false;
+    return value.any(_hasPhotoUrl);
   }
 }

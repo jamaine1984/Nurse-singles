@@ -7,6 +7,7 @@ import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:nightingale_heart/core/config/app_theme.dart';
 import 'package:nightingale_heart/core/localization/app_language.dart';
 import 'package:nightingale_heart/core/providers/app_providers.dart';
+import 'package:nightingale_heart/features/auth/widgets/mobile_access_note.dart';
 import 'package:nightingale_heart/l10n/app_localizations.dart';
 
 /// Three-page onboarding welcome screen with parallax and animated gradients.
@@ -318,7 +319,13 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
                         spacing: 12,
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 18),
+                    MobileAccessNote(
+                      locale: locale,
+                      compact: true,
+                      showAdsStatus: true,
+                    ),
+                    const SizedBox(height: 22),
 
                     // Get Started / Next button
                     SizedBox(

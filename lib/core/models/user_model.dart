@@ -107,6 +107,7 @@ class UserModel {
     this.isBoosted = false,
     this.boostExpiresAt,
     this.boostAdCredits = 0,
+    this.hiddenFromDiscovery = false,
     this.following = const [],
     this.blocked = const [],
     this.inventory = const [],
@@ -155,6 +156,7 @@ class UserModel {
   final bool isBoosted;
   final DateTime? boostExpiresAt;
   final int boostAdCredits;
+  final bool hiddenFromDiscovery;
   final List<String> following;
   final List<String> blocked;
   final List<String> inventory;
@@ -223,6 +225,7 @@ class UserModel {
       isBoosted: data['isBoosted'] as bool? ?? false,
       boostExpiresAt: _toDateTime(data['boostExpiresAt']),
       boostAdCredits: (data['boostAdCredits'] as num?)?.toInt() ?? 0,
+      hiddenFromDiscovery: data['hiddenFromDiscovery'] as bool? ?? false,
       following: _toStringList(data['following']),
       blocked: _toStringList(data['blocked']),
       inventory: _toStringList(data['inventory']),
@@ -290,6 +293,7 @@ class UserModel {
       isBoosted: data['isBoosted'] as bool? ?? false,
       boostExpiresAt: _toDateTime(data['boostExpiresAt']),
       boostAdCredits: (data['boostAdCredits'] as num?)?.toInt() ?? 0,
+      hiddenFromDiscovery: data['hiddenFromDiscovery'] as bool? ?? false,
       following: _toStringList(data['following']),
       blocked: _toStringList(data['blocked']),
       inventory: _toStringList(data['inventory']),
@@ -305,6 +309,7 @@ class UserModel {
     'email': email,
     'photoUrl': photoUrl,
     'gallery': gallery,
+    'hasProfilePhoto': hasAnyPhoto,
     'jobTitle': jobTitle,
     'hospital': hospital,
     'department': department,
@@ -395,6 +400,7 @@ class UserModel {
     bool? isBoosted,
     DateTime? boostExpiresAt,
     int? boostAdCredits,
+    bool? hiddenFromDiscovery,
     List<String>? following,
     List<String>? blocked,
     List<String>? inventory,
@@ -445,6 +451,7 @@ class UserModel {
       isBoosted: isBoosted ?? this.isBoosted,
       boostExpiresAt: boostExpiresAt ?? this.boostExpiresAt,
       boostAdCredits: boostAdCredits ?? this.boostAdCredits,
+      hiddenFromDiscovery: hiddenFromDiscovery ?? this.hiddenFromDiscovery,
       following: following ?? this.following,
       blocked: blocked ?? this.blocked,
       inventory: inventory ?? this.inventory,
@@ -457,16 +464,28 @@ class UserModel {
 
   // ─── Helpers ─────────────────────────────────────────────────────────
 
-  /// Whether the user has completed onboarding (has at minimum a name and age).
+  /// Whether the user has completed onboarding.
   bool get isProfileComplete =>
       name.isNotEmpty &&
       age != null &&
+      hasAnyPhoto &&
       jobTitle != null &&
       jobTitle!.isNotEmpty;
 
   /// Main display image: photoUrl, first gallery item, or null.
-  String? get displayPhoto =>
-      photoUrl ?? (gallery.isNotEmpty ? gallery.first : null);
+  String? get displayPhoto {
+    final primary = _usablePhotoUrl(photoUrl);
+    if (primary != null) return primary;
+
+    for (final imageUrl in gallery) {
+      final usable = _usablePhotoUrl(imageUrl);
+      if (usable != null) return usable;
+    }
+
+    return null;
+  }
+
+  bool get hasAnyPhoto => displayPhoto != null;
 
   bool get hasWorkplace => hospital != null && hospital!.trim().isNotEmpty;
 
@@ -510,6 +529,12 @@ class UserModel {
     if (value == null) return [];
     if (value is List) return value.map((e) => e.toString()).toList();
     return [];
+  }
+
+  static String? _usablePhotoUrl(String? value) {
+    final trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) return null;
+    return trimmed;
   }
 
   static HealthcareCredentialType? _toCredentialType(

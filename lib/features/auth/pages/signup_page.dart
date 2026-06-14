@@ -8,6 +8,7 @@ import 'package:nightingale_heart/core/providers/app_providers.dart';
 import 'package:nightingale_heart/core/services/auth_service.dart';
 import 'package:nightingale_heart/core/widgets/animated_gradient_bg.dart';
 import 'package:nightingale_heart/core/widgets/glass_card.dart';
+import 'package:nightingale_heart/features/auth/widgets/mobile_access_note.dart';
 import 'package:nightingale_heart/l10n/app_localizations.dart';
 
 /// Registration page with password strength indicator, terms checkbox,
@@ -74,6 +75,24 @@ class _SignupPageState extends ConsumerState<SignupPage> {
     if (!_formKey.currentState!.validate()) return;
 
     final locale = ref.read(localeProvider);
+    final authService = ref.read(authServiceProvider);
+    if (authService.currentUser != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'You are already signed in. Delete your current account before creating another one.',
+          ),
+          backgroundColor: AppTheme.warmRose,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+      context.go('/discover');
+      return;
+    }
+
     if (!_agreedToTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -93,7 +112,6 @@ class _SignupPageState extends ConsumerState<SignupPage> {
     setState(() => _isLoading = true);
 
     try {
-      final authService = ref.read(authServiceProvider);
       await authService.signUp(
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
@@ -149,6 +167,24 @@ class _SignupPageState extends ConsumerState<SignupPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const SizedBox(height: 24),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: _isLoading
+                          ? null
+                          : () => context.go('/welcome'),
+                      icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                      label: Text(t('back_to_welcome')),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.white.withValues(alpha: 0.82),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
+                        ),
+                      ),
+                    ),
+                  ).animate().fadeIn(duration: 500.ms),
+                  const SizedBox(height: 6),
 
                   // ── Title ──
                   Text(
@@ -170,7 +206,18 @@ class _SignupPageState extends ConsumerState<SignupPage> {
                       color: Colors.white.withValues(alpha: 0.6),
                     ),
                   ).animate().fadeIn(duration: 600.ms, delay: 200.ms),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 18),
+
+                  MobileAccessNote(locale: locale, compact: true)
+                      .animate()
+                      .fadeIn(duration: 600.ms, delay: 260.ms)
+                      .slideY(
+                        begin: 0.12,
+                        end: 0,
+                        duration: 600.ms,
+                        delay: 260.ms,
+                      ),
+                  const SizedBox(height: 24),
 
                   // ── Glass card form ──
                   GlassCard(

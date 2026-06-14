@@ -1,8 +1,8 @@
 {
     "name": "Nurse Singles International",
     "short_name": "Nurse Singles",
-    "id": "/",
-    "start_url": "/",
+    "id": "/welcome",
+    "start_url": "/welcome",
     "scope": "/",
     "display": "standalone",
     "background_color": "#F6FBFC",

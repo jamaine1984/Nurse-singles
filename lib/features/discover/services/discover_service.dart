@@ -188,6 +188,10 @@ class DiscoverService {
     _profileCache.removeWhere((key, _) => key.startsWith('$currentUserId|'));
   }
 
+  void clearProfileCacheForUser(String currentUserId) {
+    _clearUserProfileCache(currentUserId);
+  }
+
   String _profileCacheKey({
     required String currentUserId,
     required String? gender,
@@ -237,6 +241,8 @@ class DiscoverService {
       if (excludeIds.contains(doc.id)) continue;
 
       final user = UserModel.fromFirestore(doc);
+      if (user.hiddenFromDiscovery) continue;
+      if (!user.hasAnyPhoto) continue;
       if (user.blocked.contains(currentUserId)) continue;
       if (_hasWorkplaceConflict(currentUser, user)) continue;
       if (verifiedOnly && !user.isVerified) continue;

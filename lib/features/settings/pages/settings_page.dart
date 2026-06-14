@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nightingale_heart/core/config/app_constants.dart';
 import 'package:nightingale_heart/core/config/app_theme.dart';
 import 'package:nightingale_heart/core/models/user_model.dart';
@@ -658,6 +659,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             onPressed: () async {
               Navigator.of(ctx).pop();
               await ref.read(authServiceProvider).signOut();
+              ref.invalidate(authStateProvider);
+              ref.invalidate(currentUserProvider);
+              if (!mounted) return;
+              context.go('/welcome');
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,

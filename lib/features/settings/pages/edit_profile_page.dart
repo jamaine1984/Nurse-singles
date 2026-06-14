@@ -1352,9 +1352,16 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
             userId: user.id,
             file: _newProfileImage!,
           );
+          if (url.trim().isEmpty) {
+            throw StateError('Profile image upload returned an empty URL.');
+          }
           uploadedPhotoUrl = url;
         }
       }
+
+      final hasSavedPhoto =
+          (uploadedPhotoUrl != null && uploadedPhotoUrl.trim().isNotEmpty) ||
+          _gallery.any((url) => url.trim().isNotEmpty);
 
       final data = <String, dynamic>{
         'name': _nameController.text.trim(),
@@ -1378,6 +1385,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         'languages': _selectedLanguages,
         'gallery': _gallery,
         if (uploadedPhotoUrl != null) 'photoUrl': uploadedPhotoUrl,
+        'hasProfilePhoto': hasSavedPhoto,
       };
 
       await authService.updateUserProfile(data);

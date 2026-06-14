@@ -70,19 +70,7 @@ class _SplashPageState extends ConsumerState<SplashPage>
       data: (user) {
         if (!mounted) return;
         if (user != null) {
-          // Check if profile is complete
-          ref.read(currentUserProvider.future).then((userModel) {
-            if (!mounted) return;
-            if (userModel != null && userModel.isProfileComplete) {
-              context.go('/discover');
-            } else if (userModel != null) {
-              context.go('/onboarding');
-            } else {
-              context.go('/welcome');
-            }
-          }).catchError((_) {
-            if (mounted) context.go('/welcome');
-          });
+          context.go('/discover');
         } else {
           context.go('/welcome');
         }
@@ -192,10 +180,7 @@ class _SplashPageState extends ConsumerState<SplashPage>
                         color: Colors.white,
                         letterSpacing: -0.5,
                       ),
-                    ).animate().fadeIn(
-                          duration: 800.ms,
-                          curve: Curves.easeOut,
-                        ),
+                    ).animate().fadeIn(duration: 800.ms, curve: Curves.easeOut),
 
                   const SizedBox(height: 12),
 
@@ -209,10 +194,7 @@ class _SplashPageState extends ConsumerState<SplashPage>
                         color: Colors.white.withValues(alpha: 0.7),
                         letterSpacing: 0.5,
                       ),
-                    ).animate().fadeIn(
-                          duration: 800.ms,
-                          curve: Curves.easeOut,
-                        ),
+                    ).animate().fadeIn(duration: 800.ms, curve: Curves.easeOut),
                 ],
               ),
             ),

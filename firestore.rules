@@ -107,6 +107,7 @@ service cloud.firestore {
         'lastDailyBonusDate',
         'healthcareCredentialLabel',
         'healthcareCredentialType',
+        'hiddenFromDiscovery',
         'messagesLeft',
         'moderationStatus',
         'plan',
@@ -145,11 +146,40 @@ service cloud.firestore {
         );
     }
 
+    function userHasAnyPhoto(data) {
+      return (
+        'photoUrl' in data &&
+        data.photoUrl is string &&
+        data.photoUrl.size() > 0
+      ) || (
+        'gallery' in data &&
+        data.gallery is list &&
+        data.gallery.size() > 0
+      );
+    }
+
+    function userPhotoFlagAllowed() {
+      return !('hasProfilePhoto' in request.resource.data) ||
+        request.resource.data.hasProfilePhoto is bool;
+    }
+
+    function completedProfilePhotoAllowed() {
+      return !(
+        'age' in request.resource.data &&
+        request.resource.data.age is number &&
+        'jobTitle' in request.resource.data &&
+        request.resource.data.jobTitle is string &&
+        request.resource.data.jobTitle.size() > 0
+      ) || userHasAnyPhoto(request.resource.data);
+    }
+
     function userCreateAllowed(userId) {
       return isOwner(userId) &&
         !request.resource.data.keys().hasAny(userAdminOnlyFields()) &&
         userCreateDefaultsAllowed() &&
-        userPhotoLimitAllowed();
+        userPhotoLimitAllowed() &&
+        userPhotoFlagAllowed() &&
+        completedProfilePhotoAllowed();
     }
 
     function userUpdateAllowed(userId) {
@@ -157,7 +187,9 @@ service cloud.firestore {
         (
           isOwner(userId) &&
           !changedKeys().hasAny(userSensitiveFields()) &&
-          userPhotoLimitAllowed()
+          userPhotoLimitAllowed() &&
+          userPhotoFlagAllowed() &&
+          completedProfilePhotoAllowed()
         ) ||
         (
           signedIn() &&

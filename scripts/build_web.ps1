@@ -41,7 +41,7 @@ $zegoAppSign = First-Value $values @('ZEGO_APP_SIGN', 'ZEGOCLOUD_APP_SIGN')
 $environment = First-Value $values @('ENVIRONMENT')
 $adsensePublisherId = First-Value $values @('ADSENSE_PUBLISHER_ID')
 if (!$adsensePublisherId) {
-  $adsensePublisherId = 'ca-pub-7587025688858323'
+  $adsensePublisherId = 'ca-pub-4142591817172956'
 }
 $gamRewardedAdUnitPath = First-Value $values @(
   'GAM_REWARDED_AD_UNIT_PATH',
@@ -109,21 +109,6 @@ flutter @flutterArgs
 Get-ChildItem -LiteralPath 'build\web' -Filter 'flutter_bootstrap.*.js' -File -ErrorAction SilentlyContinue | Remove-Item -Force
 Get-ChildItem -LiteralPath 'build\web' -Filter 'main.dart.*.js' -File -ErrorAction SilentlyContinue | Remove-Item -Force
 
-$publicRoot = (Resolve-Path public).Path
-Get-ChildItem -LiteralPath public -Recurse -File | ForEach-Object {
-  $relativePath = $_.FullName.Substring($publicRoot.Length).TrimStart('\', '/')
-  if ($relativePath -eq 'index.html') {
-    return
-  }
-
-  $destination = Join-Path 'build\web' $relativePath
-  $destinationDirectory = Split-Path -Parent $destination
-  if ($destinationDirectory -and !(Test-Path $destinationDirectory)) {
-    New-Item -ItemType Directory -Path $destinationDirectory | Out-Null
-  }
-  Copy-Item -LiteralPath $_.FullName -Destination $destination -Force
-}
-
 $indexPath = Join-Path 'build\web' 'index.html'
 if (Test-Path $indexPath) {
   $bootstrapVersion = Get-Date -Format 'yyyyMMddHHmmss'
@@ -147,5 +132,40 @@ if (Test-Path $indexPath) {
   $gamRewardedAdUnitPathForHtml = if ($gamRewardedAdUnitPath) { $gamRewardedAdUnitPath } else { '' }
   $indexHtml = $indexHtml.Replace('__ADSENSE_PUBLISHER_ID__', $adsensePublisherIdForHtml)
   $indexHtml = $indexHtml.Replace('__GAM_REWARDED_AD_UNIT_PATH__', $gamRewardedAdUnitPathForHtml)
+  $appHtml = $indexHtml
+  if ($appHtml -notmatch '<meta\s+name="robots"') {
+    $appHtml = $appHtml -replace '(<meta\s+name="description"[^>]*>\s*)', "`$1  <meta name=`"robots`" content=`"noindex, nofollow`">`n"
+  }
+  $appHtml = $appHtml -replace '\s*<meta\s+name="google-adsense-account"[^>]*>\s*', "`n"
+  $appHtml = $appHtml -replace '\s*<link\s+rel="canonical"\s+href="https://nurse-singles\.com/"[^>]*>\s*', "`n"
   Set-Content -LiteralPath $indexPath -Value $indexHtml -NoNewline
+  Set-Content -LiteralPath (Join-Path 'build\web' 'app.html') -Value $appHtml -NoNewline
+}
+
+$publicRoot = (Resolve-Path public).Path
+Get-ChildItem -LiteralPath public -Recurse -File | ForEach-Object {
+  $relativePath = $_.FullName.Substring($publicRoot.Length).TrimStart('\', '/')
+  $destination = Join-Path 'build\web' $relativePath
+  $destinationDirectory = Split-Path -Parent $destination
+  if ($destinationDirectory -and !(Test-Path $destinationDirectory)) {
+    New-Item -ItemType Directory -Path $destinationDirectory | Out-Null
+  }
+
+  if ($_.Extension -eq '.html') {
+    $html = Get-Content -LiteralPath $_.FullName -Raw
+    $adsensePublisherIdForHtml = if ($adsensePublisherId) { $adsensePublisherId } else { '' }
+    $gamRewardedAdUnitPathForHtml = if ($gamRewardedAdUnitPath) { $gamRewardedAdUnitPath } else { '' }
+    $html = $html.Replace('__ADSENSE_PUBLISHER_ID__', $adsensePublisherIdForHtml)
+    $html = $html.Replace('__GAM_REWARDED_AD_UNIT_PATH__', $gamRewardedAdUnitPathForHtml)
+    Set-Content -LiteralPath $destination -Value $html -NoNewline
+  } else {
+    Copy-Item -LiteralPath $_.FullName -Destination $destination -Force
+  }
+}
+
+$serviceWorkerPath = Join-Path 'build\web' 'flutter_service_worker.js'
+if (Test-Path $serviceWorkerPath) {
+  $serviceWorker = Get-Content -LiteralPath $serviceWorkerPath -Raw
+  $serviceWorker = $serviceWorker -replace "if \(key == '/'\) \{\r?\n    return onlineFirst\(event\);\r?\n  \}", "if (key == '/' || key == 'index.html' || key == 'app.html') {`n    return onlineFirst(event);`n  }"
+  Set-Content -LiteralPath $serviceWorkerPath -Value $serviceWorker -NoNewline
 }
