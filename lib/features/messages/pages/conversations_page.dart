@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +9,8 @@ import 'package:timeago/timeago.dart' as timeago;
 
 import 'package:nightingale_heart/core/models/message_model.dart';
 import 'package:nightingale_heart/core/providers/app_providers.dart';
+import 'package:nightingale_heart/core/router/app_router.dart';
+import 'package:nightingale_heart/core/widgets/desktop_app_header.dart';
 import 'package:nightingale_heart/features/messages/providers/message_providers.dart';
 import 'package:nightingale_heart/l10n/app_localizations.dart';
 
@@ -45,31 +48,48 @@ class _ConversationsPageState extends ConsumerState<ConversationsPage> {
     final locale = ref.watch(localeProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final isDesktopWeb = kIsWeb && MediaQuery.sizeOf(context).width >= 1000;
     String t(String key) => AppLocalizations.translate(key, locale);
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F0B15) : _cream,
-      appBar: AppBar(
-        title: Text(
-          t('messages'),
-          style: GoogleFonts.playfairDisplay(
-            fontSize: 24,
-            fontWeight: FontWeight.w700,
+      backgroundColor: isDesktopWeb
+          ? const Color(0xFFF1F7F6)
+          : isDark
+          ? const Color(0xFF0F0B15)
+          : _cream,
+      appBar: isDesktopWeb
+          ? DesktopAppHeader(
+              activeRoute: RoutePaths.messages,
+              onMenuPressed: () => showDesktopAppMenu(context),
+            )
+          : AppBar(
+              title: Text(
+                t('messages'),
+                style: GoogleFonts.playfairDisplay(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              centerTitle: false,
+              elevation: 0,
+              backgroundColor: Colors.transparent,
+            ),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: isDesktopWeb ? 880 : double.infinity,
+          ),
+          child: currentUserAsync.when(
+            data: (currentUser) {
+              if (currentUser == null) {
+                return Center(child: Text(t('please_sign_in_messages')));
+              }
+              return _buildBody(context, currentUser.id);
+            },
+            loading: () => _buildShimmerList(context),
+            error: (e, _) => Center(child: Text('Error loading profile: $e')),
           ),
         ),
-        centerTitle: false,
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-      ),
-      body: currentUserAsync.when(
-        data: (currentUser) {
-          if (currentUser == null) {
-            return Center(child: Text(t('please_sign_in_messages')));
-          }
-          return _buildBody(context, currentUser.id);
-        },
-        loading: () => _buildShimmerList(context),
-        error: (e, _) => Center(child: Text('Error loading profile: $e')),
       ),
     );
   }

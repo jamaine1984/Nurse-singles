@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,6 +13,7 @@ import 'package:nightingale_heart/core/config/app_theme.dart';
 import 'package:nightingale_heart/core/providers/app_providers.dart';
 import 'package:nightingale_heart/core/router/app_router.dart';
 import 'package:nightingale_heart/core/services/storage_service.dart';
+import 'package:nightingale_heart/core/widgets/desktop_app_header.dart';
 import 'package:nightingale_heart/core/widgets/glass_card.dart';
 import 'package:nightingale_heart/core/widgets/pulse_avatar.dart';
 import 'package:nightingale_heart/core/widgets/shimmer_loader.dart';
@@ -395,80 +397,271 @@ class _SocialFeedPageState extends ConsumerState<SocialFeedPage> {
     final theme = Theme.of(context);
     final userAsync = ref.watch(currentUserProvider);
     final postsAsync = ref.watch(_postsProvider);
+    final isDesktopWeb = kIsWeb && MediaQuery.sizeOf(context).width >= 1000;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          _t('community'),
-          style: GoogleFonts.playfairDisplay(fontWeight: FontWeight.w600),
-        ),
-        actions: [
-          IconButton(
-            tooltip: _t('nurse_hub'),
-            icon: const Icon(Icons.local_hospital_outlined),
-            onPressed: () => context.push(RoutePaths.nurseHub),
+      backgroundColor: isDesktopWeb ? const Color(0xFFF1F7F6) : null,
+      appBar: isDesktopWeb
+          ? DesktopAppHeader(
+              activeRoute: RoutePaths.social,
+              onMenuPressed: () => showDesktopAppMenu(context),
+            )
+          : AppBar(
+              title: Text(
+                _t('community'),
+                style: GoogleFonts.playfairDisplay(fontWeight: FontWeight.w600),
+              ),
+              actions: [
+                IconButton(
+                  tooltip: _t('nurse_hub'),
+                  icon: const Icon(Icons.local_hospital_outlined),
+                  onPressed: () => context.push(RoutePaths.nurseHub),
+                ),
+              ],
+            ),
+      body: isDesktopWeb
+          ? _buildDesktopFeed(theme, userAsync, postsAsync)
+          : _buildFeedScroll(
+              theme,
+              userAsync,
+              postsAsync,
+              includeChannelSelector: true,
+            ),
+    );
+  }
+
+  Widget _buildDesktopFeed(
+    ThemeData theme,
+    AsyncValue userAsync,
+    AsyncValue<List<PostModel>> postsAsync,
+  ) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1120),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 22, 24, 0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(width: 270, child: _buildDesktopChannelRail(theme)),
+              const SizedBox(width: 24),
+              Expanded(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 780),
+                  child: _buildFeedScroll(
+                    theme,
+                    userAsync,
+                    postsAsync,
+                    includeChannelSelector: false,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
-      body: RefreshIndicator(
-        color: AppTheme.deepPlum,
-        onRefresh: () async {
-          ref.invalidate(_postsProvider);
-          // Small delay so the indicator is visible.
-          await Future.delayed(const Duration(milliseconds: 500));
-        },
-        child: CustomScrollView(
-          slivers: [
+    );
+  }
+
+  Widget _buildFeedScroll(
+    ThemeData theme,
+    AsyncValue userAsync,
+    AsyncValue<List<PostModel>> postsAsync, {
+    required bool includeChannelSelector,
+  }) {
+    return RefreshIndicator(
+      color: AppTheme.deepPlum,
+      onRefresh: () async {
+        ref.invalidate(_postsProvider);
+        // Small delay so the indicator is visible.
+        await Future.delayed(const Duration(milliseconds: 500));
+      },
+      child: CustomScrollView(
+        slivers: [
+          if (includeChannelSelector)
             SliverToBoxAdapter(child: _buildChannelSelector(theme)),
 
-            // ---- Create post card ----------------------------------------
-            SliverToBoxAdapter(child: _buildCreatePostCard(theme, userAsync)),
+          // ---- Create post card ----------------------------------------
+          SliverToBoxAdapter(child: _buildCreatePostCard(theme, userAsync)),
 
-            // ---- Post list -----------------------------------------------
-            postsAsync.when(
-              loading: () => SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (_, i) => Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    child: ShimmerLoader(height: 200, width: double.infinity),
+          // ---- Post list -----------------------------------------------
+          postsAsync.when(
+            loading: () => SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (_, i) => Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
                   ),
-                  childCount: 3,
+                  child: ShimmerLoader(height: 200, width: double.infinity),
                 ),
+                childCount: 3,
               ),
-              error: (e, _) => SliverFillRemaining(
-                child: Center(
-                  child: Text(_tf('error_loading_posts', {'error': e})),
-                ),
-              ),
-              data: (posts) {
-                if (posts.isEmpty) {
-                  return SliverFillRemaining(child: _buildEmptyState(theme));
-                }
-
-                return SliverList(
-                  delegate: SliverChildBuilderDelegate((_, i) {
-                    final post = posts[i];
-                    return PostCard(
-                      post: post,
-                      currentUserId: userAsync.valueOrNull?.id ?? '',
-                      index: i,
-                      onLike: () => _likePost(post.id),
-                      onComment: () => _showCommentSheet(post),
-                      onDelete: () => _deletePost(post.id),
-                      onImageTap: post.imageUrl != null
-                          ? () => _openImageViewer(post.imageUrl!)
-                          : null,
-                    );
-                  }, childCount: posts.length),
-                );
-              },
             ),
+            error: (e, _) => SliverFillRemaining(
+              child: Center(
+                child: Text(_tf('error_loading_posts', {'error': e})),
+              ),
+            ),
+            data: (posts) {
+              if (posts.isEmpty) {
+                return SliverFillRemaining(child: _buildEmptyState(theme));
+              }
 
-            // Bottom padding
-            const SliverToBoxAdapter(child: SizedBox(height: 100)),
+              return SliverList(
+                delegate: SliverChildBuilderDelegate((_, i) {
+                  final post = posts[i];
+                  return PostCard(
+                    post: post,
+                    currentUserId: userAsync.valueOrNull?.id ?? '',
+                    index: i,
+                    onLike: () => _likePost(post.id),
+                    onComment: () => _showCommentSheet(post),
+                    onDelete: () => _deletePost(post.id),
+                    onImageTap: post.imageUrl != null
+                        ? () => _openImageViewer(post.imageUrl!)
+                        : null,
+                  );
+                }, childCount: posts.length),
+              );
+            },
+          ),
+
+          // Bottom padding
+          const SliverToBoxAdapter(child: SizedBox(height: 100)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDesktopChannelRail(ThemeData theme) {
+    final selectedId = ref.watch(_selectedCommunityChannelProvider);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: const Color(0xFF11191B),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.forum_rounded,
+                  color: Color(0xFF5EEAD4),
+                  size: 22,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    _t('community'),
+                    style: GoogleFonts.plusJakartaSans(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              _t('community_choose_channel'),
+              style: GoogleFonts.plusJakartaSans(
+                color: Colors.white60,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 16),
+            for (final channel in _communityChannels)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      ref
+                              .read(_selectedCommunityChannelProvider.notifier)
+                              .state =
+                          channel.id;
+                    },
+                    borderRadius: BorderRadius.circular(6),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 11,
+                      ),
+                      decoration: BoxDecoration(
+                        color: selectedId == channel.id
+                            ? Colors.white.withValues(alpha: 0.09)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border(
+                          left: BorderSide(
+                            color: selectedId == channel.id
+                                ? channel.color
+                                : Colors.transparent,
+                            width: 3,
+                          ),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(channel.icon, color: channel.color, size: 19),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              _channelLabel(channel),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.plusJakartaSans(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: selectedId == channel.id
+                                    ? FontWeight.w800
+                                    : FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 14),
+              child: Divider(color: Colors.white12, height: 1),
+            ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.shield_outlined,
+                  color: Color(0xFF60A5FA),
+                  size: 18,
+                ),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Text(
+                    _t('nurse_hub_privacy_reminder'),
+                    maxLines: 7,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.plusJakartaSans(
+                      color: Colors.white60,
+                      fontSize: 10.5,
+                      height: 1.45,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),

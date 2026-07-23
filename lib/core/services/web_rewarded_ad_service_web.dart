@@ -1,8 +1,9 @@
-import 'dart:js_util' as js_util;
-import 'dart:html' as html;
+import 'dart:js_interop';
+import 'dart:js_interop_unsafe';
 
 import 'package:flutter/foundation.dart';
 import 'package:nightingale_heart/core/config/runtime_config.dart';
+import 'package:web/web.dart' as web;
 
 class WebRewardedAdService {
   WebRewardedAdService._();
@@ -18,10 +19,8 @@ class WebRewardedAdService {
     return unitPath.isNotEmpty && _bridge != null;
   }
 
-  Object? get _bridge {
-    final value = js_util.getProperty<Object?>(html.window, 'nurseSinglesAds');
-    return value;
-  }
+  JSObject? get _bridge =>
+      web.window.getProperty<JSObject?>('nurseSinglesAds'.toJS);
 
   Future<void> initialize() async {
     if (RuntimeConfig.adsensePublisherId.isEmpty) {
@@ -57,28 +56,28 @@ class WebRewardedAdService {
     }
 
     try {
-      final promise = js_util.callMethod<Object>(bridge, 'showRewardedAd', [
-        unitPath,
-      ]);
-      final result = await js_util.promiseToFuture<Object?>(promise);
-      if (result == null) {
+      final promise = bridge.callMethod<JSPromise<JSAny?>>(
+        'showRewardedAd'.toJS,
+        unitPath.toJS,
+      );
+      final jsResult = await promise.toDart;
+      final result = jsResult?.dartify();
+      if (result is! Map) {
         _unavailableReason = 'No rewarded ad result was returned.';
         return false;
       }
 
-      final granted = js_util.getProperty<bool>(result, 'granted');
+      final granted = result['granted'] == true;
       if (granted) {
-        final rewardType =
-            js_util.getProperty<Object?>(result, 'rewardType')?.toString() ??
-            'reward';
-        final rawAmount = js_util.getProperty<Object?>(result, 'amount');
+        final rewardType = result['rewardType']?.toString() ?? 'reward';
+        final rawAmount = result['amount'];
         final amount = rawAmount is num ? rawAmount.toInt() : 1;
         onReward(rewardType, amount);
         return true;
       }
 
       _unavailableReason =
-          js_util.getProperty<Object?>(result, 'reason')?.toString() ??
+          result['reason']?.toString() ??
           'Rewarded ad was closed before the reward was granted.';
       return false;
     } catch (error) {

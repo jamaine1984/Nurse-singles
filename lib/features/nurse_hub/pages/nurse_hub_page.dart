@@ -1,8 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:nightingale_heart/core/config/app_theme.dart';
+import 'package:nightingale_heart/core/router/app_router.dart';
+import 'package:nightingale_heart/core/widgets/desktop_app_header.dart';
 import 'package:nightingale_heart/core/widgets/glass_card.dart';
 import 'package:nightingale_heart/l10n/app_localizations.dart';
 
@@ -138,23 +141,44 @@ class NurseHubPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDesktopWeb = kIsWeb && MediaQuery.sizeOf(context).width >= 1000;
+    final content = ListView(
+      padding: EdgeInsets.fromLTRB(
+        isDesktopWeb ? 24 : 16,
+        isDesktopWeb ? 22 : 8,
+        isDesktopWeb ? 24 : 16,
+        28,
+      ),
+      children: [
+        const _HeroPanel(),
+        const SizedBox(height: 16),
+        ..._sections.map((section) => _HubSectionView(section: section)),
+        const SizedBox(height: 12),
+        _SafetyPanel(theme: theme),
+      ],
+    );
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          _t(context, 'nurse_hub'),
-          style: GoogleFonts.playfairDisplay(fontWeight: FontWeight.w700),
-        ),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
-        children: [
-          const _HeroPanel(),
-          const SizedBox(height: 16),
-          ..._sections.map((section) => _HubSectionView(section: section)),
-          const SizedBox(height: 12),
-          _SafetyPanel(theme: theme),
-        ],
-      ),
+      backgroundColor: isDesktopWeb ? const Color(0xFFF1F7F6) : null,
+      appBar: isDesktopWeb
+          ? DesktopAppHeader(
+              activeRoute: RoutePaths.nurseHub,
+              onMenuPressed: () => showDesktopAppMenu(context),
+            )
+          : AppBar(
+              title: Text(
+                _t(context, 'nurse_hub'),
+                style: GoogleFonts.playfairDisplay(fontWeight: FontWeight.w700),
+              ),
+            ),
+      body: isDesktopWeb
+          ? Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1180),
+                child: content,
+              ),
+            )
+          : content,
     );
   }
 }

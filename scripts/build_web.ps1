@@ -41,7 +41,7 @@ $zegoAppSign = First-Value $values @('ZEGO_APP_SIGN', 'ZEGOCLOUD_APP_SIGN')
 $environment = First-Value $values @('ENVIRONMENT')
 $adsensePublisherId = First-Value $values @('ADSENSE_PUBLISHER_ID')
 if (!$adsensePublisherId) {
-  $adsensePublisherId = 'ca-pub-4142591817172956'
+  $adsensePublisherId = 'ca-pub-7587025688858323'
 }
 $gamRewardedAdUnitPath = First-Value $values @(
   'GAM_REWARDED_AD_UNIT_PATH',
@@ -142,9 +142,39 @@ if (Test-Path $indexPath) {
   Set-Content -LiteralPath (Join-Path 'build\web' 'app.html') -Value $appHtml -NoNewline
 }
 
+$curatedBlogPages = @(
+  'index.html',
+  'healthcare-dating-safety-guide.html',
+  'shift-friendly-first-date-planner.html',
+  'us-allied-healthcare-dating.html',
+  'us-healthcare-privacy-dating.html',
+  'us-healthcare-video-intros.html',
+  'us-night-shift-nurse-dating.html',
+  'us-nursing-student-dating.html',
+  'us-travel-nurse-dating.html'
+)
+
+$buildBlogRoot = Join-Path 'build\web' 'blog'
+if (Test-Path $buildBlogRoot) {
+  Get-ChildItem -LiteralPath $buildBlogRoot -Filter '*.html' -File |
+    Remove-Item -Force
+}
+Remove-Item -LiteralPath (Join-Path 'build\web' 'ai-search.html') -Force -ErrorAction SilentlyContinue
+
 $publicRoot = (Resolve-Path public).Path
 Get-ChildItem -LiteralPath public -Recurse -File | ForEach-Object {
   $relativePath = $_.FullName.Substring($publicRoot.Length).TrimStart('\', '/')
+  $normalizedRelativePath = $relativePath.Replace('\', '/')
+  if ($normalizedRelativePath -eq 'ai-search.html') {
+    return
+  }
+  if (
+    $normalizedRelativePath.StartsWith('blog/') -and
+    $_.Extension -eq '.html' -and
+    $curatedBlogPages -notcontains $_.Name
+  ) {
+    return
+  }
   $destination = Join-Path 'build\web' $relativePath
   $destinationDirectory = Split-Path -Parent $destination
   if ($destinationDirectory -and !(Test-Path $destinationDirectory)) {

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,8 +11,10 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:nightingale_heart/core/config/app_constants.dart';
 import 'package:nightingale_heart/core/models/user_model.dart';
 import 'package:nightingale_heart/core/providers/app_providers.dart';
+import 'package:nightingale_heart/core/router/app_router.dart';
 import 'package:nightingale_heart/core/services/admob_service.dart';
 import 'package:nightingale_heart/core/widgets/app_network_image.dart';
+import 'package:nightingale_heart/core/widgets/desktop_app_header.dart';
 import 'package:nightingale_heart/features/compatibility/services/compatibility_service.dart';
 import 'package:nightingale_heart/features/messages/providers/message_providers.dart';
 import 'package:nightingale_heart/l10n/app_localizations.dart';
@@ -289,26 +292,51 @@ class _MatchesPageState extends ConsumerState<MatchesPage>
     }
 
     final plan = currentUser.plan;
+    final isDesktopWeb = kIsWeb && MediaQuery.sizeOf(context).width >= 1000;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F0B15),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0F0B15),
-        elevation: 0,
-        centerTitle: true,
-        title: Text(
-          _t('connections'),
-          style: GoogleFonts.playfairDisplay(
-            fontSize: 24,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
-          child: _buildTabBar(),
-        ),
-      ),
+      appBar: isDesktopWeb
+          ? PreferredSize(
+              preferredSize: const Size.fromHeight(126),
+              child: Column(
+                children: [
+                  SizedBox(
+                    height: 72,
+                    child: DesktopAppHeader(
+                      activeRoute: RoutePaths.matches,
+                      onMenuPressed: () => showDesktopAppMenu(context),
+                    ),
+                  ),
+                  Expanded(
+                    child: ColoredBox(
+                      color: const Color(0xFF0F0B15),
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 4, bottom: 6),
+                        child: _buildTabBar(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : AppBar(
+              backgroundColor: const Color(0xFF0F0B15),
+              elevation: 0,
+              centerTitle: true,
+              title: Text(
+                _t('connections'),
+                style: GoogleFonts.playfairDisplay(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(48),
+                child: _buildTabBar(),
+              ),
+            ),
       body: TabBarView(
         controller: _tabController,
         children: [
@@ -520,7 +548,9 @@ class _MatchesPageState extends ConsumerState<MatchesPage>
 
     controller.onCancel = () async {
       isClosed = true;
-      await Future.wait(subscriptions.map((subscription) => subscription.cancel()));
+      await Future.wait(
+        subscriptions.map((subscription) => subscription.cancel()),
+      );
     };
 
     return controller.stream;

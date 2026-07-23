@@ -11,6 +11,7 @@ import 'package:nightingale_heart/core/providers/app_providers.dart';
 import 'package:nightingale_heart/core/services/admob_service.dart';
 import 'package:nightingale_heart/core/services/web_rewarded_ad_service.dart';
 import 'package:nightingale_heart/core/widgets/app_network_image.dart';
+import 'package:nightingale_heart/core/widgets/desktop_app_header.dart';
 import 'package:nightingale_heart/core/widgets/glass_card.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nightingale_heart/features/settings/pages/settings_page.dart';
@@ -117,38 +118,74 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final theme = Theme.of(context);
     final userAsync = ref.watch(currentUserProvider);
     ref.watch(localeProvider);
+    final isDesktopWeb = kIsWeb && MediaQuery.sizeOf(context).width >= 1000;
 
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          tooltip: _t('go_back'),
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: _goBackFromProfile,
-        ),
-        title: Text(
-          _t('my_profile'),
-          style: GoogleFonts.playfairDisplay(fontWeight: FontWeight.w600),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () {
-              Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const SettingsPage()));
-            },
+      backgroundColor: isDesktopWeb ? const Color(0xFFF1F7F6) : null,
+      appBar: isDesktopWeb
+          ? DesktopAppHeader(
+              activeRoute: RoutePaths.profile,
+              onMenuPressed: () => showDesktopAppMenu(context),
+              extraActions: [
+                IconButton(
+                  tooltip: _t('go_back'),
+                  icon: const Icon(
+                    Icons.arrow_back_rounded,
+                    color: Colors.white,
+                  ),
+                  onPressed: _goBackFromProfile,
+                ),
+                IconButton(
+                  tooltip: _t('settings'),
+                  icon: const Icon(
+                    Icons.settings_outlined,
+                    color: Colors.white,
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const SettingsPage()),
+                    );
+                  },
+                ),
+              ],
+            )
+          : AppBar(
+              leading: IconButton(
+                tooltip: _t('go_back'),
+                icon: const Icon(Icons.arrow_back_rounded),
+                onPressed: _goBackFromProfile,
+              ),
+              title: Text(
+                _t('my_profile'),
+                style: GoogleFonts.playfairDisplay(fontWeight: FontWeight.w600),
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.settings_outlined),
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const SettingsPage()),
+                    );
+                  },
+                ),
+              ],
+            ),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: isDesktopWeb ? 920 : double.infinity,
           ),
-        ],
-      ),
-      body: userAsync.when(
-        data: (user) {
-          if (user == null) {
-            return Center(child: Text(_t('please_sign_in')));
-          }
-          return _buildProfileContent(user, theme);
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text(_t('something_went_wrong'))),
+          child: userAsync.when(
+            data: (user) {
+              if (user == null) {
+                return Center(child: Text(_t('please_sign_in')));
+              }
+              return _buildProfileContent(user, theme);
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, _) => Center(child: Text(_t('something_went_wrong'))),
+          ),
+        ),
       ),
     );
   }

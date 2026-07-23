@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +12,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import 'package:nightingale_heart/core/config/app_constants.dart';
 import 'package:nightingale_heart/core/providers/app_providers.dart';
+import 'package:nightingale_heart/core/router/app_router.dart';
+import 'package:nightingale_heart/core/widgets/desktop_app_header.dart';
 import 'package:nightingale_heart/features/video_dating/services/video_service.dart';
 import 'package:nightingale_heart/l10n/app_localizations.dart';
 
@@ -726,9 +729,26 @@ class _VideoLobbyPageState extends ConsumerState<VideoLobbyPage>
           _ensureRoomsExist();
         }
 
+        final isDesktopWeb = kIsWeb && MediaQuery.sizeOf(context).width >= 1000;
+
         return Scaffold(
-          extendBodyBehindAppBar: true,
-          appBar: _buildAppBar(),
+          extendBodyBehindAppBar: !isDesktopWeb,
+          appBar: isDesktopWeb
+              ? DesktopAppHeader(
+                  activeRoute: RoutePaths.video,
+                  onMenuPressed: () => showDesktopAppMenu(context),
+                  extraActions: [
+                    IconButton(
+                      tooltip: _tr(context, 'video_minutes'),
+                      icon: const Icon(
+                        Icons.timer_outlined,
+                        color: Colors.white,
+                      ),
+                      onPressed: () => context.push(RoutePaths.videoMinutes),
+                    ),
+                  ],
+                )
+              : _buildAppBar(),
           body: _AnimatedBackground(
             child: SafeArea(
               child: Stack(

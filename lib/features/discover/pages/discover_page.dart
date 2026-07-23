@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
@@ -16,6 +18,7 @@ import 'package:nightingale_heart/core/providers/app_providers.dart';
 import 'package:nightingale_heart/core/services/call_notification_service.dart';
 import 'package:nightingale_heart/core/services/usage_limits_service.dart';
 import 'package:nightingale_heart/core/widgets/app_network_image.dart';
+import 'package:nightingale_heart/core/widgets/desktop_app_header.dart';
 import 'package:nightingale_heart/core/widgets/limit_reached_dialog.dart';
 import 'package:nightingale_heart/core/widgets/shimmer_loader.dart';
 import 'package:nightingale_heart/features/discover/providers/discover_provider.dart';
@@ -24,6 +27,98 @@ import 'package:nightingale_heart/features/discover/widgets/filter_sheet.dart';
 import 'package:nightingale_heart/features/discover/widgets/profile_card.dart';
 import 'package:nightingale_heart/features/messages/providers/message_providers.dart';
 import 'package:nightingale_heart/l10n/app_localizations.dart';
+
+typedef _DiscoveryUsageRequest = ({
+  String userId,
+  SubscriptionPlan plan,
+  int videoMinutes,
+});
+
+final _discoveryUsageProvider = StreamProvider.autoDispose
+    .family<_DiscoveryUsage, _DiscoveryUsageRequest>((ref, request) {
+      final now = DateTime.now().toUtc();
+      final day =
+          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      final month = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+      final dailyId = 'daily_$day';
+      final monthlyId = 'monthly_$month';
+
+      return FirebaseFirestore.instance
+          .collection(AppConstants.usersCollection)
+          .doc(request.userId)
+          .collection('usage')
+          .where(FieldPath.documentId, whereIn: [dailyId, monthlyId])
+          .snapshots()
+          .map((snapshot) {
+            var daily = const <String, dynamic>{};
+            var monthly = const <String, dynamic>{};
+            for (final doc in snapshot.docs) {
+              if (doc.id == dailyId) daily = doc.data();
+              if (doc.id == monthlyId) monthly = doc.data();
+            }
+            return _DiscoveryUsage.fromData(
+              plan: request.plan,
+              videoMinutes: request.videoMinutes,
+              daily: daily,
+              monthly: monthly,
+            );
+          });
+    });
+
+class _DiscoveryUsage {
+  const _DiscoveryUsage({
+    required this.likesRemaining,
+    required this.superLikesRemaining,
+    required this.rewindsRemaining,
+    required this.videoMinutes,
+  });
+
+  final int likesRemaining;
+  final int superLikesRemaining;
+  final int rewindsRemaining;
+  final int videoMinutes;
+
+  factory _DiscoveryUsage.fromData({
+    required SubscriptionPlan plan,
+    required int videoMinutes,
+    required Map<String, dynamic> daily,
+    required Map<String, dynamic> monthly,
+  }) {
+    final features = AppConstants.planFeatures[plan]!;
+    final likesLimit = features['dailyLikes'] as int;
+    final rewindLimit = features['dailyRewinds'] as int? ?? 0;
+    final dailySuperLikeLimit = features['dailySuperLikes'] as int?;
+    final monthlySuperLikeLimit = features['monthlySuperLikes'] as int? ?? 0;
+
+    int value(Map<String, dynamic> source, String key) {
+      return (source[key] as num?)?.toInt() ?? 0;
+    }
+
+    int remaining(int limit, int used, [int refilled = 0]) {
+      if (limit == -1) return -1;
+      return max(0, limit + refilled - used);
+    }
+
+    final superLikesRemaining = dailySuperLikeLimit != null
+        ? remaining(dailySuperLikeLimit, value(daily, 'superLikesSent'))
+        : remaining(monthlySuperLikeLimit, value(monthly, 'superLikesSent'));
+
+    return _DiscoveryUsage(
+      likesRemaining: remaining(
+        likesLimit,
+        value(daily, 'likesSent'),
+        value(daily, 'likesRefilled'),
+      ),
+      superLikesRemaining: superLikesRemaining,
+      rewindsRemaining: remaining(
+        rewindLimit,
+        value(daily, 'rewindsUsed'),
+        value(daily, 'rewindsRefilled'),
+      ),
+      videoMinutes: max(0, videoMinutes),
+    );
+  }
+}
 
 /// Main discover / swipe page.
 ///
@@ -427,7 +522,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage>
       ),
       _MainMenuItem(
         icon: Icons.videocam_rounded,
-        label: _t('nav_video'),
+        label: _t('speed_dating'),
         route: '/video',
       ),
       _MainMenuItem(
@@ -482,49 +577,80 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage>
       ),
     ];
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (sheetContext) {
-        final theme = Theme.of(sheetContext);
-        final height = min(
-          MediaQuery.sizeOf(sheetContext).height * 0.64,
-          560.0,
-        );
-        return SafeArea(
+    Widget menuPanel(BuildContext menuContext, {required bool desktop}) {
+      final availableHeight = MediaQuery.sizeOf(menuContext).height;
+      final gridHeight = min(
+        availableHeight * (desktop ? 0.72 : 0.64),
+        desktop ? 650.0 : 560.0,
+      );
+
+      return Container(
+        width: desktop ? 440 : double.infinity,
+        constraints: BoxConstraints(maxHeight: availableHeight - 112),
+        decoration: BoxDecoration(
+          color: const Color(0xFF11191B),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.28),
+              blurRadius: 28,
+              offset: const Offset(0, 12),
+            ),
+          ],
+        ),
+        child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  _t('main_menu'),
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: theme.colorScheme.onSurface,
-                  ),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.medical_services_rounded,
+                      color: Color(0xFF2DD4BF),
+                      size: 22,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        _t('main_menu'),
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 21,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: MaterialLocalizations.of(
+                        menuContext,
+                      ).closeButtonTooltip,
+                      onPressed: () => Navigator.of(menuContext).pop(),
+                      icon: const Icon(Icons.close_rounded),
+                      color: Colors.white70,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
                 Text(
                   _t('menu_quick_access'),
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurfaceVariant,
+                    color: Colors.white60,
                   ),
                 ),
                 const SizedBox(height: 16),
                 SizedBox(
-                  height: height,
+                  height: gridHeight,
                   child: GridView.builder(
                     itemCount: items.length,
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
-                          childAspectRatio: 2.7,
+                          childAspectRatio: 2.55,
                           crossAxisSpacing: 10,
                           mainAxisSpacing: 10,
                         ),
@@ -532,8 +658,9 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage>
                       final item = items[index];
                       return _MainMenuTile(
                         item: item,
+                        dark: true,
                         onTap: () {
-                          Navigator.of(sheetContext).pop();
+                          Navigator.of(menuContext).pop();
                           if (mounted) this.context.push(item.route);
                         },
                       );
@@ -543,8 +670,35 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage>
               ],
             ),
           ),
-        );
-      },
+        ),
+      );
+    }
+
+    final isDesktop = kIsWeb && MediaQuery.sizeOf(context).width >= 1000;
+    if (isDesktop) {
+      showDialog<void>(
+        context: context,
+        barrierColor: Colors.black.withValues(alpha: 0.36),
+        builder: (dialogContext) => Dialog(
+          alignment: Alignment.topRight,
+          insetPadding: const EdgeInsets.fromLTRB(24, 88, 24, 24),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: menuPanel(dialogContext, desktop: true),
+        ),
+      );
+      return;
+    }
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.44),
+      builder: (sheetContext) => Padding(
+        padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+        child: menuPanel(sheetContext, desktop: false),
+      ),
     );
   }
 
@@ -786,29 +940,40 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage>
     final currentUser = ref.watch(currentUserProvider).valueOrNull;
     ref.watch(localeProvider);
     final theme = Theme.of(context);
+    final isDesktopWeb = kIsWeb && MediaQuery.sizeOf(context).width >= 1000;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          _t('nav_discover'),
-          style: GoogleFonts.playfairDisplay(fontWeight: FontWeight.w700),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.tune_rounded, semanticLabel: _t('filters')),
-            tooltip: _t('filters'),
-            onPressed: _openFilters,
-          ),
-          IconButton(
-            icon: Icon(Icons.menu_rounded, semanticLabel: _t('main_menu')),
-            tooltip: _t('main_menu'),
-            onPressed: _openMainMenu,
-          ),
-        ],
-      ),
+      appBar: isDesktopWeb
+          ? DesktopAppHeader(
+              activeRoute: '/discover',
+              onFilterPressed: _openFilters,
+              onMenuPressed: _openMainMenu,
+            )
+          : AppBar(
+              title: Text(
+                _t('nav_discover'),
+                style: GoogleFonts.playfairDisplay(fontWeight: FontWeight.w700),
+              ),
+              actions: [
+                IconButton(
+                  icon: Icon(Icons.tune_rounded, semanticLabel: _t('filters')),
+                  tooltip: _t('filters'),
+                  onPressed: _openFilters,
+                ),
+                IconButton(
+                  icon: Icon(
+                    Icons.menu_rounded,
+                    semanticLabel: _t('main_menu'),
+                  ),
+                  tooltip: _t('main_menu'),
+                  onPressed: _openMainMenu,
+                ),
+              ],
+            ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final showWideBackdrop = constraints.maxWidth >= 700;
+          final showDesktopShell = kIsWeb && constraints.maxWidth >= 1000;
 
           return Stack(
             children: [
@@ -831,6 +996,13 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage>
                   }
                   if (_profiles.isEmpty) {
                     return _buildEmptyState(theme);
+                  }
+                  if (showDesktopShell) {
+                    return _buildDesktopDiscovery(
+                      _profiles,
+                      theme,
+                      currentUser,
+                    );
                   }
                   return _buildSwiper(_profiles, theme, currentUser);
                 },
@@ -872,6 +1044,46 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage>
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildDesktopDiscovery(
+    List<UserModel> profiles,
+    ThemeData theme,
+    UserModel? currentUser,
+  ) {
+    final usageAsync = currentUser == null
+        ? const AsyncValue<_DiscoveryUsage>.loading()
+        : ref.watch(
+            _discoveryUsageProvider((
+              userId: currentUser.id,
+              plan: currentUser.plan,
+              videoMinutes: currentUser.videoMinutes,
+            )),
+          );
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1280),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 18, 24, 14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: _buildSwiper(profiles, theme, currentUser)),
+              const SizedBox(width: 24),
+              SizedBox(
+                width: 310,
+                child: _DiscoveryDesktopRail(
+                  user: currentUser,
+                  usageAsync: usageAsync,
+                  onOpenRoute: (route) => context.push(route),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1092,6 +1304,378 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage>
 
 // ─── Action button row ──────────────────────────────────────────────────────
 
+class _DiscoveryDesktopRail extends StatelessWidget {
+  const _DiscoveryDesktopRail({
+    required this.user,
+    required this.usageAsync,
+    required this.onOpenRoute,
+  });
+
+  final UserModel? user;
+  final AsyncValue<_DiscoveryUsage> usageAsync;
+  final ValueChanged<String> onOpenRoute;
+
+  String _t(BuildContext context, String key) {
+    return AppLocalizations.translate(key, Localizations.localeOf(context));
+  }
+
+  String _remainingLabel(BuildContext context, int? value) {
+    if (value == null) return '--';
+    if (value == -1) return _t(context, 'unlimited');
+    return '$value';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final currentUser = user;
+    final usage = usageAsync.valueOrNull;
+    final role = currentUser?.careRoleBadge ?? _t(context, 'job_title');
+    final planName = currentUser?.plan.displayName ?? 'Free';
+    final privacyLabel = currentUser == null
+        ? _t(context, 'workplace_privacy')
+        : currentUser.hideWorkplace
+        ? _t(context, 'hide_hospital_name')
+        : currentUser.avoidSameWorkplace
+        ? _t(context, 'avoid_same_workplace')
+        : currentUser.avoidSameDepartment
+        ? _t(context, 'avoid_same_department')
+        : _t(context, 'workplace_privacy');
+    final verificationLabel = currentUser?.isVerified == true
+        ? currentUser!.healthcareVerificationBadge ?? _t(context, 'verified')
+        : _t(context, 'profile_verification');
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: const Color(0xFF11191B).withValues(alpha: 0.96),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.18),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F766E).withValues(alpha: 0.24),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.monitor_heart_rounded,
+                    color: Color(0xFF5EEAD4),
+                    size: 23,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '$planName ${_t(context, 'subscription')}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.plusJakartaSans(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        role,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.plusJakartaSans(
+                          color: Colors.white60,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Text(
+              _t(context, 'todays_usage'),
+              style: GoogleFonts.plusJakartaSans(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 12,
+              runSpacing: 14,
+              children: [
+                _UsageMetric(
+                  icon: Icons.favorite_rounded,
+                  color: const Color(0xFFFB7185),
+                  label: _t(context, 'likes'),
+                  value: _remainingLabel(context, usage?.likesRemaining),
+                ),
+                _UsageMetric(
+                  icon: Icons.star_rounded,
+                  color: const Color(0xFFFBBF24),
+                  label: _t(context, 'superlikes_remaining'),
+                  value: _remainingLabel(context, usage?.superLikesRemaining),
+                ),
+                _UsageMetric(
+                  icon: Icons.replay_rounded,
+                  color: const Color(0xFF60A5FA),
+                  label: _t(context, 'rewinds'),
+                  value: _remainingLabel(context, usage?.rewindsRemaining),
+                ),
+                _UsageMetric(
+                  icon: Icons.video_camera_front_rounded,
+                  color: const Color(0xFF5EEAD4),
+                  label: _t(context, 'video_minutes'),
+                  value: _remainingLabel(context, usage?.videoMinutes),
+                ),
+              ],
+            ),
+            if (usageAsync.hasError) ...[
+              const SizedBox(height: 10),
+              Text(
+                _t(context, 'usage_unavailable'),
+                style: GoogleFonts.plusJakartaSans(
+                  color: const Color(0xFFFCA5A5),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              height: 42,
+              child: OutlinedButton.icon(
+                onPressed: () => onOpenRoute('/subscription/manage'),
+                icon: const Icon(Icons.workspace_premium_outlined, size: 19),
+                label: Text(_t(context, 'upgrade')),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF5EEAD4),
+                  side: const BorderSide(color: Color(0xFF2DD4BF)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  textStyle: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 20),
+              child: Divider(color: Colors.white12, height: 1),
+            ),
+            Text(
+              _t(context, 'menu_quick_access'),
+              style: GoogleFonts.plusJakartaSans(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _RailAction(
+              icon: Icons.video_call_outlined,
+              label: _t(context, 'speed_dating'),
+              onTap: () => onOpenRoute('/video'),
+            ),
+            _RailAction(
+              icon: Icons.forum_outlined,
+              label: _t(context, 'nav_feed'),
+              onTap: () => onOpenRoute('/social'),
+            ),
+            _RailAction(
+              icon: Icons.local_hospital_outlined,
+              label: _t(context, 'nurse_hub'),
+              onTap: () => onOpenRoute('/nurse-hub'),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Divider(color: Colors.white12, height: 1),
+            ),
+            _RailStatus(
+              icon: currentUser?.isVerified == true
+                  ? Icons.verified_rounded
+                  : Icons.verified_user_outlined,
+              color: currentUser?.isVerified == true
+                  ? const Color(0xFF34D399)
+                  : const Color(0xFFFBBF24),
+              label: verificationLabel,
+            ),
+            const SizedBox(height: 12),
+            _RailStatus(
+              icon: Icons.shield_outlined,
+              color: const Color(0xFF60A5FA),
+              label: privacyLabel,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _UsageMetric extends StatelessWidget {
+  const _UsageMetric({
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 128,
+      height: 72,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  height: 28,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      value,
+                      style: GoogleFonts.plusJakartaSans(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.plusJakartaSans(
+                    color: Colors.white60,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RailAction extends StatelessWidget {
+  const _RailAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 10),
+        child: Row(
+          children: [
+            Icon(icon, color: const Color(0xFF5EEAD4), size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.plusJakartaSans(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: Colors.white38,
+              size: 20,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RailStatus extends StatelessWidget {
+  const _RailStatus({
+    required this.icon,
+    required this.color,
+    required this.label,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, color: color, size: 19),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.plusJakartaSans(
+              color: Colors.white70,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _MainMenuItem {
   const _MainMenuItem({
     required this.icon,
@@ -1105,10 +1689,15 @@ class _MainMenuItem {
 }
 
 class _MainMenuTile extends StatelessWidget {
-  const _MainMenuTile({required this.item, required this.onTap});
+  const _MainMenuTile({
+    required this.item,
+    required this.onTap,
+    this.dark = false,
+  });
 
   final _MainMenuItem item;
   final VoidCallback onTap;
+  final bool dark;
 
   @override
   Widget build(BuildContext context) {
@@ -1120,18 +1709,26 @@ class _MainMenuTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         child: Ink(
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest.withValues(
-              alpha: 0.58,
-            ),
+            color: dark
+                ? Colors.white.withValues(alpha: 0.06)
+                : theme.colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.58,
+                  ),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.55),
+              color: dark
+                  ? Colors.white.withValues(alpha: 0.10)
+                  : theme.colorScheme.outlineVariant.withValues(alpha: 0.55),
             ),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
             children: [
-              Icon(item.icon, color: AppTheme.deepPlum, size: 22),
+              Icon(
+                item.icon,
+                color: dark ? const Color(0xFF5EEAD4) : AppTheme.deepPlum,
+                size: 22,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -1141,7 +1738,7 @@ class _MainMenuTile extends StatelessWidget {
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
-                    color: theme.colorScheme.onSurface,
+                    color: dark ? Colors.white : theme.colorScheme.onSurface,
                   ),
                 ),
               ),

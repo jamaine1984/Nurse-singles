@@ -1,0 +1,50 @@
+{
+    "name":  "Nurse Singles",
+    "domain":  "nurse-singles.com",
+    "canonical_url":  "https://nurse-singles.com",
+    "ai_search_profile_url":  "https://nurse-singles.com/ai-search",
+    "sitemap_url":  "https://nurse-singles.com/sitemap.xml",
+    "content_language":  "en",
+    "last_updated":  "2026-07-11",
+    "description":  "Nurse Singles is a free-to-start healthcare dating and community app for adult nurses, nursing students, travel clinicians, doctors, allied health workers, and healthcare singles, with speed dating, Nurse Hub guides, games, Break Room community, and workplace privacy boundaries.",
+    "primary_topics":  [
+                           "nurse dating app",
+                           "healthcare dating",
+                           "free nurse dating",
+                           "speed dating for nurses",
+                           "travel nurse dating",
+                           "night shift nurse dating",
+                           "Nurse Hub",
+                           "healthcare worker privacy"
+                       ],
+    "monitor_prompts":  [
+                            "best free dating app for nurses",
+                            "nurse dating app with speed dating",
+                            "dating app for healthcare workers",
+                            "Nurse Singles vs Tinder for nurses",
+                            "travel nurse dating app"
+                        ],
+    "safe_backlink_targets":  [
+                                  "official app store listing",
+                                  "owned social profiles",
+                                  "founder or company profile",
+                                  "legitimate product directories",
+                                  "relevant community answers where self-promotion is allowed",
+                                  "earned press or interview mentions",
+                                  "partner pages with real context"
+                              ],
+    "avoid":  [
+                  "paid link farms",
+                  "private blog networks",
+                  "bulk low-quality directory spam",
+                  "fake reviews",
+                  "AI-spun doorway pages",
+                  "irrelevant comment spam"
+              ],
+    "guardrails":  [
+                       "For adults only",
+                       "Not medical advice",
+                       "Do not share patient information",
+                       "Avoid unsupported claims that the app is objectively better than every competitor"
+                   ]
+}

@@ -111,6 +111,7 @@ class _PostCardState extends State<PostCard>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final post = widget.post;
+    final isWideViewport = MediaQuery.sizeOf(context).width >= 900;
 
     return GlassCard(
           padding: const EdgeInsets.all(0),
@@ -217,22 +218,48 @@ class _PostCardState extends State<PostCard>
                       borderRadius: BorderRadius.circular(
                         AppTheme.borderRadiusSmall,
                       ),
-                      child: CachedNetworkImage(
-                        imageUrl: post.imageUrl!,
+                      child: Container(
                         width: double.infinity,
-                        height: 220,
-                        fit: BoxFit.cover,
-                        placeholder: (_, __) => Container(
-                          height: 220,
-                          color: AppTheme.softLavender,
-                          child: const Center(
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
+                        constraints: BoxConstraints(
+                          maxHeight: isWideViewport ? 560 : 420,
                         ),
-                        errorWidget: (_, __, ___) => Container(
-                          height: 220,
-                          color: AppTheme.softLavender,
-                          child: const Icon(Icons.broken_image_rounded),
+                        color: const Color(0xFF11191B),
+                        child: CachedNetworkImage(
+                          imageUrl: post.imageUrl!,
+                          width: double.infinity,
+                          fit: BoxFit.contain,
+                          placeholder: (_, __) => SizedBox(
+                            height: isWideViewport ? 340 : 220,
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Color(0xFF5EEAD4),
+                              ),
+                            ),
+                          ),
+                          errorWidget: (_, __, ___) => SizedBox(
+                            height: 140,
+                            child: Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.image_not_supported_outlined,
+                                    color: Colors.white54,
+                                    size: 30,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    _t(context, 'photo_unavailable'),
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: Colors.white60,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),

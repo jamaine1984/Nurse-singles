@@ -130,6 +130,21 @@ void main() {
       'Suapan Hospital',
     );
     expect(
+      AppLocalizations.translate(
+        'community_choose_channel',
+        const Locale('es'),
+      ),
+      'Elige una comunidad de salud',
+    );
+    expect(
+      AppLocalizations.translate('rewinds', const Locale('ms')),
+      'Putar semula',
+    );
+    expect(
+      AppLocalizations.translate('photo_unavailable', const Locale('es')),
+      'Foto no disponible',
+    );
+    expect(
       AppLocalizations.translate('workplace_privacy', const Locale('ms')),
       'Privasi tempat kerja',
     );

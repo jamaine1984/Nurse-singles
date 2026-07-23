@@ -619,7 +619,7 @@ foreach ($post in $Posts) {
   <meta property="og:url" content="$canonical">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="stylesheet" href="/blog/blog.css">
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4142591817172956" crossorigin="anonymous"></script>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=__ADSENSE_PUBLISHER_ID__" crossorigin="anonymous"></script>
   <script type="application/ld+json">$jsonLd</script>
 </head>
 <body>
@@ -747,7 +747,7 @@ $blogIndex = @"
   <meta property="og:url" content="$BaseUrl/blog/">
   <meta name="twitter:card" content="summary">
   <link rel="stylesheet" href="/blog/blog.css">
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4142591817172956" crossorigin="anonymous"></script>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=__ADSENSE_PUBLISHER_ID__" crossorigin="anonymous"></script>
   <script type="application/ld+json">$blogIndexJson</script>
 </head>
 <body>

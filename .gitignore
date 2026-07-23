@@ -43,6 +43,7 @@ Downloads/
 .pub-cache/
 .pub/
 build/
+output/
 *.iml
 
 # Android
